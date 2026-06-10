@@ -163,31 +163,42 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
   100%{transform:rotate(-5deg) translateY(-10px);opacity:0;}
 }
 .deck-pop-anim{animation:deckTopPop 0.18s ease-out forwards;}
+/* game-body: 가로 스크롤 완전 차단, 세 컬럼이 각자 독립 스크롤 */
 .game-body{display:flex;flex:1;overflow:hidden;min-height:0;}
-@media(max-width:700px){
-  .game-body{flex-direction:column;overflow-y:auto;}
-  .side-panel{width:100%!important;border-right:none!important;border-left:none!important;border-bottom:1px solid var(--border);overflow-y:visible!important;max-height:none!important;}
-  .board-area{padding:6px;overflow-y:visible!important;}
-  .board-wrap{padding:10px;}
-}
-.side-panel{width:205px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;height:100%;}
-.side-panel.right{border-right:none;border-left:1px solid var(--border);}
-/* 채팅창 */
-.chat-panel{display:none;flex-direction:column;border-top:1px solid var(--border);background:var(--ui-bg);flex-shrink:0;max-height:220px;}
+/* 패널 컨테이너: 패널 스크롤 영역 + 채팅 고정 영역을 세로로 쌓음 */
+.panel-col{display:flex;flex-direction:column;width:205px;flex-shrink:0;overflow:hidden;height:100%;}
+.panel-col.left{border-right:1px solid var(--border);}
+.panel-col.right{border-left:1px solid var(--border);}
+.side-panel{flex:1;background:var(--panel);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;min-height:0;}
+/* 채팅창 — panel-col 안에서 아래쪽에 고정 */
+.chat-panel{display:none;flex-direction:column;border-top:2px solid var(--border2);background:var(--ui-bg);flex-shrink:0;height:210px;}
 .chat-panel.visible{display:flex;}
-.chat-header{padding:5px 11px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text3);display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.chat-messages{flex:1;overflow-y:auto;padding:5px 10px;display:flex;flex-direction:column;gap:3px;min-height:60px;max-height:130px;}
+.chat-header{padding:4px 10px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text3);display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.chat-messages{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 9px;display:flex;flex-direction:column;gap:2px;min-height:0;}
 .chat-messages::-webkit-scrollbar{width:3px;}
 .chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.chat-msg{font-size:11px;line-height:1.45;word-break:break-all;}
-.chat-msg .chat-nick{font-weight:700;margin-right:4px;}
+.chat-msg{font-size:11px;line-height:1.5;word-break:break-all;white-space:pre-wrap;}
+.chat-msg .chat-nick{font-weight:700;margin-right:3px;}
 .chat-msg.me .chat-nick{color:var(--accent);}
 .chat-msg.opp .chat-nick{color:#1565c0;}
 .chat-msg.system{color:var(--text3);font-style:italic;text-align:center;font-size:10px;}
-.chat-input-row{display:flex;gap:5px;padding:5px 8px;border-top:1px solid var(--border);flex-shrink:0;}
-.chat-input{flex:1;padding:5px 8px;border:1.5px solid var(--border2);border-radius:6px;font-size:12px;outline:none;}
+.chat-input-row{display:flex;gap:4px;padding:5px 7px;border-top:1px solid var(--border);flex-shrink:0;}
+.chat-input{flex:1;min-width:0;padding:5px 7px;border:1.5px solid var(--border2);border-radius:6px;font-size:12px;outline:none;}
 .chat-input:focus{border-color:var(--accent);}
-.chat-send-btn{padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;}
+.chat-send-btn{padding:5px 9px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0;}
+/* 태블릿: 700px~900px 범위에서도 독립 스크롤 유지, 패널 폭만 줄임 */
+@media(max-width:900px) and (min-width:701px){
+  .panel-col{width:175px;}
+}
+/* 모바일: 세로로 전환, 독립 스크롤 해제 */
+@media(max-width:700px){
+  .game-body{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+  .panel-col{width:100%;height:auto;overflow:visible;border-right:none;border-left:none;border-bottom:1px solid var(--border);}
+  .side-panel{overflow-y:visible;overflow-x:visible;flex:none;}
+  .chat-panel{height:auto;max-height:200px;}
+  .board-area{padding:6px;overflow-y:visible;}
+  .board-wrap{padding:10px;}
+}
 .panel-player-header{padding:8px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .panel-player-stone{width:17px;height:17px;border-radius:50%;flex-shrink:0;}
 .panel-player-stone.b{background:radial-gradient(circle at 35% 30%,#555,#111);}
@@ -228,7 +239,7 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .action-btn.place-btn{background:#2e7d32;color:#fff;border-color:#2e7d32;}
 .action-btn.place-btn:disabled{background:var(--border);color:var(--text3);border-color:var(--border);}
 .action-btn.pass-inactive{background:var(--bg2)!important;color:var(--text3)!important;border-color:var(--border)!important;cursor:not-allowed!important;opacity:0.5;}
-.board-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px;gap:8px;min-width:0;overflow-y:auto;height:100%;}
+.board-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px;gap:8px;min-width:0;overflow-y:auto;overflow-x:hidden;height:100%;}
 .board-wrap{background:var(--board-bg);border-radius:5px;padding:16px;box-shadow:0 4px 18px rgba(0,0,0,0.14);flex-shrink:0;}
 canvas#boardCanvas{display:block;touch-action:none;}
 .status-bar{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--text2);text-align:center;width:100%;max-width:540px;}
@@ -276,6 +287,20 @@ canvas#boardCanvas{display:block;touch-action:none;}
 <div id="page-auth" class="page active">
   <div class="auth-wrap">
     <div class="auth-logo"><h1>전략적 오목</h1><p>Strategic Omok — 카드로 판을 뒤집어라</p></div>
+    <div style="width:100%;background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1.5px solid var(--border);border-radius:11px;padding:13px 15px;display:flex;flex-direction:column;gap:7px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.5px;">게임 소개</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.65;">
+        오목 위에 카드 전략을 더한 새로운 보드게임입니다.<br>
+        <b>5목</b>을 먼저 완성하면 승리!<br>
+        <span style="color:var(--accent);">▸ 착수 + 카드 스킬</span>로 상대를 압도하세요.
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:99px;font-weight:700;">로컬 2인</span>
+        <span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:99px;font-weight:700;">온라인 대전</span>
+        <span style="font-size:11px;background:#fff9c4;color:#f9a825;padding:2px 8px;border-radius:99px;font-weight:700;">카드 40종+</span>
+        <span style="font-size:11px;background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:99px;font-weight:700;">합성 시스템</span>
+      </div>
+    </div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">로그인</button>
       <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">회원가입</button>
@@ -340,6 +365,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <button class="menu-btn secondary" onclick="showPage('page-online')">온라인 대전 (다른 기기)</button>
       <button class="menu-btn disabled">AI 대전 (준비중)</button>
       <button class="menu-btn secondary" onclick="showPage('page-book')">카드 도감</button>
+      <button class="menu-btn secondary" onclick="document.getElementById('gameGuideModal').classList.add('show')">게임 방법 보기 ❓</button>
     </div>
   </div>
 </div>
@@ -398,30 +424,49 @@ canvas#boardCanvas{display:block;touch-action:none;}
     </div>
   </div>
   <div class="game-body">
-    <div class="side-panel" id="panelBlack">
-      <div class="panel-player-header">
-        <div class="panel-player-stone b"></div>
-        <div class="panel-player-name">흑</div>
-        <span class="panel-player-nick" id="blackNickDisplay"></span>
-        <span id="blackHandCount" style="margin-left:auto;font-size:10px;color:var(--text3);">0/8</span>
-      </div>
-      <div class="panel-section"><div class="panel-section-label">상대 패</div></div>
-      <div class="opp-hand" id="whiteOppView"></div>
-      <div class="panel-section"><div class="panel-section-label">내 패</div></div>
-      <div class="hand-list" id="blackHand"></div>
-      <div class="merge-section">
-        <div class="panel-section-label" style="margin-bottom:4px;">합성</div>
-        <div class="merge-slots">
-          <div class="merge-slot" id="bms0" onclick="clickMergeSlot('black',0)">+</div>
-          <div class="merge-slot" id="bms1" onclick="clickMergeSlot('black',1)">+</div>
+    <div class="panel-col left" id="colBlack">
+      <div class="side-panel" id="panelBlack">
+        <!-- 헤더: 이름+돌 -->
+        <div class="panel-player-header">
+          <div class="panel-player-stone b"></div>
+          <div>
+            <div class="panel-player-name">흑 <span class="panel-player-nick" id="blackNickDisplay"></span></div>
+            <div id="blackRecordDisplay" style="font-size:10px;color:var(--text3);margin-top:1px;"></div>
+          </div>
+          <span id="blackHandCount" style="margin-left:auto;font-size:10px;color:var(--text3);">0/8</span>
         </div>
-        <button class="merge-btn" id="bMergeBtn" onclick="doMerge('black')" disabled>합성 ▶</button>
-        <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+        <!-- 온라인: 상대 패 수 표시 영역 (내가 백일 때 보임) -->
+        <div id="blackOppInfo" style="display:none;padding:6px 11px;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">상대 보유 카드</div>
+          <div id="blackOppCardCount" style="font-size:13px;font-weight:700;color:var(--text2);">- 장</div>
+        </div>
+        <!-- 로컬: 상대(백) 패 뒷면 보기 -->
+        <div id="whiteOppSection" class="panel-section" style="display:none;"><div class="panel-section-label">상대 패</div></div>
+        <div class="opp-hand" id="whiteOppView" style="display:none;"></div>
+        <div class="panel-section"><div class="panel-section-label">내 패</div></div>
+        <div class="hand-list" id="blackHand"></div>
+        <div class="merge-section">
+          <div class="panel-section-label" style="margin-bottom:4px;">합성</div>
+          <div class="merge-slots">
+            <div class="merge-slot" id="bms0" onclick="clickMergeSlot('black',0)">+</div>
+            <div class="merge-slot" id="bms1" onclick="clickMergeSlot('black',1)">+</div>
+          </div>
+          <button class="merge-btn" id="bMergeBtn" onclick="doMerge('black')" disabled>합성 ▶</button>
+          <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+        </div>
+        <div class="action-section">
+          <button class="action-btn use-card" id="bUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
+          <button class="action-btn place-btn" id="bPlaceBtn" onclick="confirmPlace()" disabled style="display:none;">착수 확정</button>
+        </div>
       </div>
-      <div class="action-section">
-        <button class="action-btn use-card" id="bUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
-        <button class="action-btn" id="bPassBtn" onclick="passToPlace()">착수만 하기</button>
-        <button class="action-btn place-btn" id="bPlaceBtn" onclick="confirmPlace()" disabled style="display:none;">착수 확정</button>
+      <!-- 채팅창 (흑이 내 역할일 때 여기에 표시) -->
+      <div class="chat-panel" id="chatPanelLeft">
+        <div class="chat-header">💬 채팅</div>
+        <div class="chat-messages" id="chatMessagesLeft"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInputLeft" type="text" placeholder="메시지 입력..." maxlength="100" autocomplete="off">
+          <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
+        </div>
       </div>
     </div>
     <div class="board-area">
@@ -450,37 +495,47 @@ canvas#boardCanvas{display:block;touch-action:none;}
       </div>
       <div class="status-bar" id="statusBar">게임을 시작합니다.</div>
     </div>
-    <div class="side-panel right" id="panelWhite">
-      <div class="panel-player-header">
-        <div class="panel-player-stone w"></div>
-        <div class="panel-player-name">백</div>
-        <span class="panel-player-nick" id="whiteNickDisplay"></span>
-        <span id="whiteHandCount" style="margin-left:auto;font-size:10px;color:var(--text3);">0/8</span>
-      </div>
-      <div class="panel-section"><div class="panel-section-label">상대 패</div></div>
-      <div class="opp-hand" id="blackOppView"></div>
-      <div class="panel-section"><div class="panel-section-label">내 패</div></div>
-      <div class="hand-list" id="whiteHand"></div>
-      <div class="merge-section">
-        <div class="panel-section-label" style="margin-bottom:4px;">합성</div>
-        <div class="merge-slots">
-          <div class="merge-slot" id="wms0" onclick="clickMergeSlot('white',0)">+</div>
-          <div class="merge-slot" id="wms1" onclick="clickMergeSlot('white',1)">+</div>
+    <div class="panel-col right" id="colWhite">
+      <div class="side-panel right" id="panelWhite">
+        <!-- 헤더: 이름+돌 -->
+        <div class="panel-player-header">
+          <div class="panel-player-stone w"></div>
+          <div>
+            <div class="panel-player-name">백 <span class="panel-player-nick" id="whiteNickDisplay"></span></div>
+            <div id="whiteRecordDisplay" style="font-size:10px;color:var(--text3);margin-top:1px;"></div>
+          </div>
+          <span id="whiteHandCount" style="margin-left:auto;font-size:10px;color:var(--text3);">0/8</span>
         </div>
-        <button class="merge-btn" id="wMergeBtn" onclick="doMerge('white')" disabled>합성 ▶</button>
-        <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+        <!-- 온라인: 상대 패 수 표시 영역 (내가 흑일 때 보임) -->
+        <div id="whiteOppInfo" style="display:none;padding:6px 11px;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">상대 보유 카드</div>
+          <div id="whiteOppCardCount" style="font-size:13px;font-weight:700;color:var(--text2);">- 장</div>
+        </div>
+        <!-- 로컬: 상대(흑) 패 뒷면 보기 -->
+        <div id="blackOppSection" class="panel-section" style="display:none;"><div class="panel-section-label">상대 패</div></div>
+        <div class="opp-hand" id="blackOppView" style="display:none;"></div>
+        <div class="panel-section"><div class="panel-section-label">내 패</div></div>
+        <div class="hand-list" id="whiteHand"></div>
+        <div class="merge-section">
+          <div class="panel-section-label" style="margin-bottom:4px;">합성</div>
+          <div class="merge-slots">
+            <div class="merge-slot" id="wms0" onclick="clickMergeSlot('white',0)">+</div>
+            <div class="merge-slot" id="wms1" onclick="clickMergeSlot('white',1)">+</div>
+          </div>
+          <button class="merge-btn" id="wMergeBtn" onclick="doMerge('white')" disabled>합성 ▶</button>
+          <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+        </div>
+        <div class="action-section">
+          <button class="action-btn use-card" id="wUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
+          <button class="action-btn place-btn" id="wPlaceBtn" onclick="confirmPlace()" disabled style="display:none;">착수 확정</button>
+        </div>
       </div>
-      <div class="action-section">
-        <button class="action-btn use-card" id="wUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
-        <button class="action-btn" id="wPassBtn" onclick="passToPlace()">착수만 하기</button>
-        <button class="action-btn place-btn" id="wPlaceBtn" onclick="confirmPlace()" disabled style="display:none;">착수 확정</button>
-      </div>
-      <!-- 채팅창 (온라인 전용) -->
-      <div class="chat-panel" id="chatPanel">
+      <!-- 채팅창 (백이 내 역할일 때 여기에 표시) -->
+      <div class="chat-panel" id="chatPanelRight">
         <div class="chat-header">💬 채팅</div>
-        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-messages" id="chatMessagesRight"></div>
         <div class="chat-input-row">
-          <input class="chat-input" id="chatInput" type="text" placeholder="메시지 입력..." maxlength="100" autocomplete="off">
+          <input class="chat-input" id="chatInputRight" type="text" placeholder="메시지 입력..." maxlength="100" autocomplete="off">
           <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
         </div>
       </div>
@@ -536,6 +591,51 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <button class="modal-btn cancel" onclick="closeModal('quitModal')">계속</button>
       <button class="modal-btn confirm" onclick="quitToMenu()">종료</button>
     </div>
+  </div>
+</div>
+<!-- GAME GUIDE MODAL -->
+<div class="modal-overlay" id="gameGuideModal" style="overflow-y:auto;align-items:flex-start;padding:20px 0;">
+  <div class="modal-box" style="max-width:460px;width:93%;max-height:90vh;overflow-y:auto;padding:24px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin-bottom:0;">게임 방법</h3>
+      <button onclick="document.getElementById('gameGuideModal').classList.remove('show')" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text2);line-height:1.65;">
+      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">🎯 승리 조건</div>
+        <div>가로·세로·대각선 방향으로 자신의 돌 5개를 먼저 연속으로 놓으면 승리합니다.</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">🔄 턴 진행 방식</div>
+        <div>
+          <b>① 판을 클릭</b> → 착수 위치 미리보기 표시<br>
+          <b>② [착수 확정]</b> 버튼 클릭 → 돌 착수 완료, 턴 종료<br><br>
+          <b>카드를 쓰고 싶다면?</b><br>
+          패널의 카드를 클릭 → <b>[능력 사용]</b> 버튼 클릭<br>
+          카드 효과 발동 후 <b>자동으로 착수 단계</b>로 전환됩니다.<br><br>
+          ⚠️ 한 턴에 카드는 <b>1장만</b> 사용할 수 있습니다.<br>
+          착수 중에도 카드를 선택하면 카드 사용 모드로 전환됩니다.
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">🃏 카드 시스템</div>
+        <div>
+          매 턴 시작 시 덱에서 카드 1장을 자동으로 드로우합니다.<br>
+          카드는 1성~5성으로 구분되며, 성급이 높을수록 강력합니다.<br><br>
+          <b>합성:</b> 같은 성급 카드 2장을 합성해 한 단계 높은 카드를 획득할 수 있습니다.<br>
+          최대 패는 <b>8장</b>입니다.
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">⏱ 시간 제한</div>
+        <div>각 플레이어는 한 턴에 <b>45초</b>의 시간이 주어집니다.<br>시간이 초과되면 자동으로 턴이 넘어갑니다.</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">🌐 온라인 대전</div>
+        <div>방 만들기로 6자리 코드를 생성하고, 상대에게 코드를 공유하세요.<br>상대가 입장하면 자동으로 게임이 시작됩니다.</div>
+      </div>
+    </div>
+    <button class="modal-btn confirm" onclick="document.getElementById('gameGuideModal').classList.remove('show')" style="width:100%;margin-top:16px;padding:11px;">확인</button>
   </div>
 </div>
 <script>
@@ -1133,20 +1233,70 @@ function oppKey(){return playerKey(getOpp(currentPlayer));}
 function applyPanelOrder(){
   const body=document.querySelector('.game-body');
   if(!body)return;
-  // white가 내 팀이면 white를 order:0(왼쪽), black을 order:2(오른쪽)
   const myIsWhite=isOnlineGame&&onlineMyRole==='white';
-  document.getElementById('panelBlack').style.order=myIsWhite?'2':'0';
-  document.getElementById('panelWhite').style.order=myIsWhite?'0':'2';
-  // 보드는 항상 가운데
+  // panel-col 컨테이너 order 제어 (panelBlack/White 직접 제어 대신)
+  const colBlack=document.getElementById('colBlack');
+  const colWhite=document.getElementById('colWhite');
+  if(colBlack)colBlack.style.order=myIsWhite?'2':'0';
+  if(colWhite)colWhite.style.order=myIsWhite?'0':'2';
   document.querySelector('.board-area').style.order='1';
-  // 패널 border 방향도 맞게 조정
+  // border 방향: col에 적용
+  if(colBlack){colBlack.classList.toggle('left',!myIsWhite);colBlack.classList.toggle('right',myIsWhite);}
+  if(colWhite){colWhite.classList.toggle('right',!myIsWhite);colWhite.classList.toggle('left',myIsWhite);}
+  // side-panel right 클래스 조정 (내부 border 없음)
   const pBlack=document.getElementById('panelBlack');
   const pWhite=document.getElementById('panelWhite');
   if(myIsWhite){
-    pWhite.classList.remove('right');pBlack.classList.add('right');
+    if(pWhite)pWhite.classList.remove('right');if(pBlack)pBlack.classList.add('right');
   }else{
-    pBlack.classList.remove('right');pWhite.classList.add('right');
+    if(pBlack)pBlack.classList.remove('right');if(pWhite)pWhite.classList.add('right');
   }
+  // 온라인: 상대 패널 UI 조정
+  if(isOnlineGame){
+    const myKey=onlineMyRole;// 'black' or 'white'
+    const oppKey=myKey==='black'?'white':'black';
+    // 상대 패널: OppInfo 표시, 내 패/합성/착수 숨김
+    updateOppPanelUI(oppKey, myKey);
+    // 로컬용 상대패 뒷면 숨김
+    ['whiteOppView','blackOppView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    ['whiteOppSection','blackOppSection'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  }else{
+    // 로컬: 양쪽 패널 정상 표시, 상대 패 뒷면 보임
+    ['whiteOppView','blackOppView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';});
+    ['whiteOppSection','blackOppSection'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';});
+    ['blackOppInfo','whiteOppInfo'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    // 로컬: 양쪽 모두 합성/착수 표시
+    ['black','white'].forEach(p=>showMyPanelUI(p,true));
+  }
+}
+
+// 상대 패널 UI: 합성·착수·내패 숨기고 상대정보만 표시
+function updateOppPanelUI(oppKey, myKey){
+  const opp=oppKey;// 상대
+  const me=myKey;
+  // 상대 패널 요소
+  const oppMerge=document.getElementById(opp==='black'?'panelBlack':'panelWhite').querySelector('.merge-section');
+  const oppAction=document.getElementById(opp==='black'?'panelBlack':'panelWhite').querySelector('.action-section');
+  const oppHandSection=document.getElementById(opp==='black'?'panelBlack':'panelWhite').querySelector('.panel-section');
+  const oppHandList=document.getElementById(opp+'Hand');
+  if(oppMerge)oppMerge.style.display='none';
+  if(oppAction)oppAction.style.display='none';
+  if(oppHandSection)oppHandSection.style.display='none';
+  if(oppHandList)oppHandList.style.display='none';
+  // 상대 OppInfo 표시
+  const oppInfo=document.getElementById(opp+'OppInfo');
+  if(oppInfo)oppInfo.style.display='block';
+  // 내 패널 정상 유지
+  showMyPanelUI(me, true);
+}
+
+function showMyPanelUI(pKey, show){
+  const panel=document.getElementById('panel'+(pKey==='black'?'Black':'White'));
+  if(!panel)return;
+  const merge=panel.querySelector('.merge-section');
+  const action=panel.querySelector('.action-section');
+  if(merge)merge.style.display=show?'':'none';
+  if(action)action.style.display=show?'':'none';
 }
 function initGame(opts={}){
   isOnlineGame=opts.online||false;onlineRoomId=opts.roomId||null;onlineMyRole=opts.myRole||null;
@@ -1156,17 +1306,19 @@ function initGame(opts={}){
   board=Array.from({length:BS},()=>new Array(BS).fill(0));
   fortified={};traps={};banCells={};prophetCells={};dangerMarks={}; // key -> turns remaining
   constructionMark=null;exiledCells={};sanctuaryZones=[];voidZones=[];bombs=[];evadeEffect=null;
-  boardHistory=[];currentPlayer=1;turnCount=1;phase='card';
+  boardHistory=[];currentPlayer=1;turnCount=1;phase='place';
   selectedCardIdx=null;clickState=null;extraPlace=0;
   reserveNext={black:false,white:false};irrationalTurns={black:0,white:0};starCards={black:[],white:[]};
   mergeSlots={black:[null,null],white:[null,null]};hoverCell=null;pendingSelected=null;blindTurns=0;pendingUseCard=null;
   decks={black:[],white:[]};hands={black:[],white:[]};
   dealCardsSafe('black',2,1);dealCardsSafe('white',3,1);
   dealCards('black',1); // 턴1 시작 카드 지급 → 흑 3장으로 시작
-  document.getElementById('blackNickDisplay').textContent=gameNicknames.black!=='흑'?'('+gameNicknames.black+')':'';
-  document.getElementById('whiteNickDisplay').textContent=gameNicknames.white!=='백'?'('+gameNicknames.white+')':'';
-  resizeBoard();startTimer();renderAll();
-  setStatus('흑의 차례입니다. 카드를 사용하거나 <b>착수만 하기</b>를 누르세요.');
+  document.getElementById('blackNickDisplay').textContent=gameNicknames.black!=='흑'?gameNicknames.black:'';
+  document.getElementById('whiteNickDisplay').textContent=gameNicknames.white!=='백'?gameNicknames.white:'';
+  document.getElementById('blackRecordDisplay').textContent='';
+  document.getElementById('whiteRecordDisplay').textContent='';
+  resizeBoard();startTimer();renderAll();showPlaceBtn(true);
+  setStatus('흑의 차례입니다. 판을 눌러 위치를 선택하거나 카드를 눌러 스킬을 사용하세요.');
 }
 function dealCards(p,n,star){const s=star!==undefined?star:getCardStarForTurn(turnCount);dealCardsSafe(p,n,s);}
 
@@ -1352,6 +1504,32 @@ function drawBoard(){
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(isValidTarget(r,c)){ctx.fillStyle='rgba(184,134,11,0.17)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}}
     clickState.collected.forEach(([r,c])=>{ctx.strokeStyle='#b8860b';ctx.lineWidth=2;ctx.strokeRect(OFF+c*CELL_SIZE-H+1,OFF+r*CELL_SIZE-H+1,CELL_SIZE-2,CELL_SIZE-2);});
   }
+  // ── 폭탄 위치 선택 중: 범위 미리보기 ──
+  if(clickState&&clickState.bombSize){
+    const bsz=clickState.bombSize;
+    // 선택 완료된 점 → 확정 범위 표시
+    if(clickState.collected.length>0){
+      const[br,bc]=clickState.collected[0];
+      const bRange=bsz===2?[[0,0],[0,1],[1,0],[1,1]]:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,0],[0,1],[1,-1],[1,0],[1,1]];
+      bRange.forEach(([dr,dc])=>{const nr=br+dr,nc=bc+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N){ctx.fillStyle='rgba(183,28,28,0.28)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}});
+      ctx.strokeStyle='rgba(183,28,28,0.85)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+      const r0=bsz===2?br:br-1,c0=bsz===2?bc:bc-1;
+      ctx.strokeRect(OFF+c0*CELL_SIZE-H,OFF+r0*CELL_SIZE-H,CELL_SIZE*bsz,CELL_SIZE*bsz);ctx.setLineDash([]);
+      // 선택 점에 폭탄 아이콘
+      ctx.font=`${Math.round(CELL_SIZE*0.55)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('💣',OFF+bc*CELL_SIZE,OFF+br*CELL_SIZE);
+    }else if(hoverCell){
+      // 아직 선택 전 + 호버 중 → 호버 위치 범위 미리보기
+      const{r:hr,c:hc}=hoverCell;
+      if(board[hr][hc]===0){
+        const bRange=bsz===2?[[0,0],[0,1],[1,0],[1,1]]:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,0],[0,1],[1,-1],[1,0],[1,1]];
+        bRange.forEach(([dr,dc])=>{const nr=hr+dr,nc=hc+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N){ctx.fillStyle='rgba(183,28,28,0.18)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}});
+        ctx.strokeStyle='rgba(183,28,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+        const r0=bsz===2?hr:hr-1,c0=bsz===2?hc:hc-1;
+        ctx.strokeRect(OFF+c0*CELL_SIZE-H,OFF+r0*CELL_SIZE-H,CELL_SIZE*bsz,CELL_SIZE*bsz);ctx.setLineDash([]);
+      }
+    }
+  }
 }
 function isValidTarget(r,c){if(!clickState)return false;const m=clickState.mode;if(m==='empty')return board[r][c]===0;if(m==='own')return board[r][c]===currentPlayer;if(m==='opp')return board[r][c]===getOpp(currentPlayer);if(m==='stone')return board[r][c]!==0;return true;}
 
@@ -1422,12 +1600,29 @@ function renderHand(player){
     });
   }
   document.getElementById(player+'HandCount').textContent=hand.length+'/8';
+  // 온라인: 상대 패널에 카드 수 표시
+  if(isOnlineGame){
+    const oppCountId=(player==='black'?'white':'black')+'OppCardCount';
+    const oppCountEl=document.getElementById(oppCountId);
+    if(oppCountEl)oppCountEl.textContent=hand.length+' 장';
+  }
   const oppId=player==='black'?'whiteOppView':'blackOppView';
+  const oppSectionId=player==='black'?'whiteOppSection':'blackOppSection';
   const oppHand=hands[player==='black'?'white':'black'];
-  document.getElementById(oppId).innerHTML=isOnlineGame?'':oppHand.map(()=>'<div class="opp-card-back">?</div>').join('');
+  if(!isOnlineGame){
+    const oppViewEl=document.getElementById(oppId);
+    const oppSecEl=document.getElementById(oppSectionId);
+    if(oppViewEl){oppViewEl.style.display='';oppViewEl.innerHTML=oppHand.map(()=>'<div class="opp-card-back">?</div>').join('');}
+    if(oppSecEl)oppSecEl.style.display='';
+  }else{
+    const oppViewEl=document.getElementById(oppId);
+    const oppSecEl=document.getElementById(oppSectionId);
+    if(oppViewEl)oppViewEl.style.display='none';
+    if(oppSecEl)oppSecEl.style.display='none';
+  }
   updateMerge(player);
   const btnId=player==='black'?'bUseCardBtn':'wUseCardBtn';
-  const btn=document.getElementById(btnId);if(btn)btn.style.display=(canAct&&selectedCardIdx!==null)?'block':'none';
+  const btn=document.getElementById(btnId);if(btn)btn.style.display=(canAct&&selectedCardIdx!==null&&(phase==='card'||phase==='place'))?'block':'none';
 }
 function updateTurnUI(){
   const isB=currentPlayer===1;
@@ -1441,8 +1636,6 @@ function updateTurnUI(){
   ['bPlaceBtn','wPlaceBtn'].forEach(id=>{const e=document.getElementById(id);if(e&&phase==='card'){e.style.display='none';}});
   // 중앙 착수 버튼도 카드 단계에서 숨기기
   if(phase==='card'){const cpw=document.getElementById('centerPlaceBtnWrap');if(cpw)cpw.style.display='none';}
-  // 착수만 하기 버튼 active 상태 복원
-  ['bPassBtn','wPassBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.remove('pass-inactive');});
 }
 function updateMerge(player){
   const isActive=(player==='black'&&currentPlayer===1)||(player==='white'&&currentPlayer===2);
@@ -1450,14 +1643,14 @@ function updateMerge(player){
   const ms=mergeSlots[player];
   [0,1].forEach(i=>{const el=document.getElementById((player==='black'?'b':'w')+'ms'+i);const card=ms[i];if(card){el.classList.add('filled');el.textContent=card.name+' '+STAR_CHAR[card.star];}else{el.classList.remove('filled');el.textContent='+';}});
   const btn=document.getElementById(player==='black'?'bMergeBtn':'wMergeBtn');
-  btn.disabled=!(canAct&&ms[0]&&ms[1]&&ms[0].star===ms[1].star&&ms[0].star<5&&phase==='card');
+  btn.disabled=!(canAct&&ms[0]&&ms[1]&&ms[0].star===ms[1].star&&ms[0].star<5&&(phase==='card'||phase==='place'));
 }
 
 // ── Merge ─────────────────────────────────────────────
 function clickMergeSlot(player,idx){
   const isActive=(player==='black'&&currentPlayer===1)||(player==='white'&&currentPlayer===2);
   const canAct=isOnlineGame?(onlineMyRole===player&&isMyTurn()):isActive;
-  if(!canAct||phase!=='card')return;
+  if(!canAct||!(phase==='card'||phase==='place'))return;
   const ms=mergeSlots[player];
   if(ms[idx]){hands[player].push(ms[idx]);ms[idx]=null;renderHand(player);return;}
   if(selectedCardIdx===null){setStatus('먼저 패에서 카드를 선택하세요.');return;}
@@ -1482,8 +1675,15 @@ function doMerge(player){
 
 // ── Card use ──────────────────────────────────────────
 function selectCard(idx){
-  if(phase!=='card'){setStatus('카드는 착수 전에 사용하세요!');return;}
+  if(phase!=='card'&&phase!=='place'){setStatus('카드를 사용할 수 없는 단계입니다!');return;}
   if(irrationalTurns[currentKey()]>0){setStatus('비합리 효과로 카드를 사용할 수 없습니다!');return;}
+  // place 단계에서 카드 선택 시 card 단계로 전환
+  if(phase==='place'){
+    phase='card';pendingSelected=null;showPlaceBtn(false);
+    // 착수 확정 버튼 숨기기
+    const cpw=document.getElementById('centerPlaceBtnWrap');if(cpw)cpw.style.display='none';
+    drawBoard();
+  }
   selectedCardIdx=selectedCardIdx===idx?null:idx;renderHand(currentKey());
 }
 function passToPlace(){
@@ -1496,21 +1696,15 @@ function passToPlace(){
 }
 function showPlaceBtn(show){
   const pKey=currentKey();
-  const pid=pKey==='black'?'bPlaceBtn':'wPlaceBtn',cid=pKey==='black'?'bUseCardBtn':'wUseCardBtn',sid=pKey==='black'?'bPassBtn':'wPassBtn';
-  const pb=document.getElementById(pid),cb=document.getElementById(cid),sb=document.getElementById(sid);
+  const pid=pKey==='black'?'bPlaceBtn':'wPlaceBtn',cid=pKey==='black'?'bUseCardBtn':'wUseCardBtn';
+  const pb=document.getElementById(pid),cb=document.getElementById(cid);
   if(pb){pb.style.display=show?'block':'none';pb.disabled=!pendingSelected;}
-  if(cb&&show)cb.style.display='none';
-  if(sb){sb.style.display=show?'none':'block';}
+  if(cb){cb.style.display=(show||!selectedCardIdx)?'none':cb.style.display;}
   // 중앙 착수 확정 버튼
   const cpw=document.getElementById('centerPlaceBtnWrap');
   const cpb=document.getElementById('centerPlaceBtn');
   if(cpw){cpw.style.display=show?'block':'none';}
   if(cpb){cpb.disabled=!pendingSelected;}
-  // phase가 place이면 착수만하기 버튼 비활성화
-  ['bPassBtn','wPassBtn'].forEach(id=>{
-    const b=document.getElementById(id);
-    if(b){b.classList.toggle('pass-inactive',phase==='place');}
-  });
 }
 function triggerUseCard(){
   if(selectedCardIdx===null)return;
@@ -1711,7 +1905,11 @@ function applyEffect(card){
   };
   if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===p)fortified[nr+','+nc]=4;}setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();});return;}
   if(eff==='blind'){blindTurns=4;setStatus('블라인드 발동! 2턴 동안 상대에게 카드 정보가 숨겨집니다.');endGoPlace();return;}
-  if(CE[eff]){const[mode,max,cb]=CE[eff];startClick(mode,max,cb);return;}
+  if(CE[eff]){const[mode,max,cb]=CE[eff];startClick(mode,max,cb);
+    if(eff==='bomb_s')clickState.bombSize=2;
+    if(eff==='bomb_l')clickState.bombSize=3;
+    return;
+  }
   if(eff==='move_stone'){startClick('own',1,(cs)=>{const[r,c]=cs[0];clickState={mode:'empty',max:1,collected:[],callback:(cs2)=>{const[nr,nc]=cs2[0];if(Math.abs(nr-r)>1||Math.abs(nc-c)>1){setStatus('인접 칸으로만!');endGoPlace();return;}board[nr][nc]=board[r][c];board[r][c]=0;if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}setStatus('돌 이동!');endGoPlace();}};setStatus('이동할 빈 칸을 클릭하세요.');drawBoard();});return;}
   if(eff==='unstable_two'){
   let first=null;
@@ -1763,11 +1961,12 @@ function cancelSkill(){
   clickState=null;
   showSkillConfirmBtn(false);
   pendingUseCard=null; // 카드는 손패에 그대로 있음
-  setStatus('스킬 취소. 카드를 다시 선택할 수 있습니다.');
-  phase='card';selectedCardIdx=null;
+  phase='place';selectedCardIdx=null;pendingSelected=null;
+  showPlaceBtn(true);
+  setStatus('스킬 취소. 판을 눌러 착수하거나 카드를 다시 선택할 수 있습니다.');
   renderAll();
 }
-function endGoPlace(){phase='place';selectedCardIdx=null;pendingSelected=null;showSkillConfirmBtn(false);showPlaceBtn(true);renderAll();setStatus('착수할 위치를 클릭 후 [착수 확정]을 누르세요.');}
+function endGoPlace(){phase='place';selectedCardIdx=null;pendingSelected=null;showSkillConfirmBtn(false);showPlaceBtn(true);renderAll();setStatus('착수할 위치를 클릭 후 [착수 확정]을 누르세요. (카드 클릭 시 스킬 취소 후 재선택 가능)');}
 function startClick(mode,max,cb){clickState={mode,max,collected:[],callback:cb};showSkillConfirmBtn(false);const ml={empty:'빈 칸',own:'내 돌',opp:'상대 돌',stone:'돌',any:'칸'};setStatus(`${ml[mode]||mode} ${max}개를 클릭하세요.`);drawBoard();}
 
 // ── 착수 확정 ─────────────────────────────────────────────────
@@ -1863,12 +2062,11 @@ function endTurn(){
   if(blindTurns>0)blindTurns--;
   if(evadeEffect){evadeEffect.turns--;if(evadeEffect.turns<=0)evadeEffect=null;}
   currentPlayer=getOpp(currentPlayer);const newKey=currentKey();if(currentPlayer===1)turnCount++; // 흑 차례 시작 = 새 턴
-  phase='card';selectedCardIdx=null;pendingSelected=null;clickState=null;pendingUseCard=null;
+  phase='place';selectedCardIdx=null;pendingSelected=null;clickState=null;pendingUseCard=null;
   // 합성 슬롯에 카드가 남아있으면 손패로 반환 (이전 플레이어 기준)
   const prevKey=playerKey(getOpp(currentPlayer));
   [0,1].forEach(i=>{if(mergeSlots[prevKey][i]){hands[prevKey].push(mergeSlots[prevKey][i]);mergeSlots[prevKey][i]=null;}});
   ['bPlaceBtn','wPlaceBtn'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.disabled=true;}});
-  ['bPassBtn','wPassBtn'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
   ['bUseCardBtn','wUseCardBtn'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   if(constructionMark&&constructionMark.forPlayer===currentPlayer){const fk=constructionMark.key;constructionMark=null;const[fr,fc]=fk.split(',').map(Number);if(board[fr][fc]===currentPlayer){forceConstr(fr,fc);return;}}
   Object.entries(prophetCells).forEach(([k,info])=>{if(info.owner===currentPlayer){info.turnsLeft--;if(info.turnsLeft<=0){const[r,c]=k.split(',').map(Number);if(board[r][c]===0&&!isCellBanned(r,c)){board[r][c]=currentPlayer;if(checkWin(r,c,currentPlayer))showWin(currentPlayer,'예언자로 승리!');}delete prophetCells[k];}}});
@@ -1892,7 +2090,7 @@ function endTurn(){
     setStatus('폭탄 폭발!');
   });
   if(reserveNext[newKey]){reserveNext[newKey]=false;extraPlace=1;dealCards(newKey,1);phase='place';showPlaceBtn(true);setStatus('예약 착수! 돌을 2개 놓을 수 있습니다.');}
-  else{dealCards(newKey,1);setStatus(`${currentPlayer===1?'흑':'백'}의 차례입니다.`);}
+  else{dealCards(newKey,1);showPlaceBtn(true);setStatus(`${currentPlayer===1?'흑':'백'}의 차례입니다. 판을 눌러 위치를 선택하거나 카드를 눌러 스킬을 사용하세요.`);}
   // 온라인: 내 턴이 끝나면 상태 push, 상대 차례엔 타이머 정지
   if(isOnlineGame){
     onlineSyncAfterTurn();
@@ -1924,7 +2122,7 @@ function resumeTurnAfterForceConstr(){
   // 예언자 처리 (endTurn에서 forceConstr return 이전에 이미 실행됨 - 불필요)
   // 폭탄은 endTurn에서 이미 처리됨
   if(reserveNext[newKey]){reserveNext[newKey]=false;extraPlace=1;dealCards(newKey,1);phase='place';showPlaceBtn(true);setStatus('예약 착수! 돌을 2개 놓을 수 있습니다.');}
-  else{dealCards(newKey,1);setStatus(`${currentPlayer===1?'흑':'백'}의 차례입니다. 카드를 사용하거나 <b>착수만 하기</b>를 누르세요.`);}
+  else{dealCards(newKey,1);showPlaceBtn(true);setStatus(`${currentPlayer===1?'흑':'백'}의 차례입니다. 판을 눌러 위치를 선택하거나 카드를 눌러 스킬을 사용하세요.`);}
   if(isOnlineGame){
     onlineSyncAfterTurn();
     if(!isMyTurn()){clearInterval(timerInterval);setStatus('상대방의 차례입니다. 대기 중...');renderAll();return;}
@@ -2056,14 +2254,19 @@ function createOnlineRoom(){
   if(!db){alert('Firebase 초기화 실패');return;}
   const code=genCode();onlineRoomId=code;onlineMyRole='black';
   const myNick=currentUserData?currentUserData.nickname:'흑';
-  db.ref('rooms/'+code).set({status:'waiting',blackNick:myNick,whiteNick:null,gameState:null,createdAt:Date.now()}).then(()=>{
+  const myUid=currentUser?currentUser.uid:null;
+  db.ref('rooms/'+code).set({status:'waiting',blackNick:myNick,blackUid:myUid,whiteNick:null,whiteUid:null,gameState:null,createdAt:Date.now()}).then(()=>{
     const disp=document.getElementById('roomCodeDisplay');disp.style.display='flex';
     document.getElementById('roomCodeText').textContent=code;
     db.ref('rooms/'+code+'/whiteNick').on('value',snap=>{
       if(snap.val()){
         document.getElementById('roomWaitMsg').textContent='상대방 입장! 게임 시작...';
         db.ref('rooms/'+code+'/status').set('playing');
-        setTimeout(()=>startOnlineGame(code,'black',myNick,snap.val()),800);
+        // whiteUid도 같이 가져오기
+        db.ref('rooms/'+code).once('value').then(s=>{
+          const r=s.val()||{};
+          setTimeout(()=>startOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null),800);
+        });
       }
     });
   }).catch(e=>alert('방 생성 실패: '+e.message));
@@ -2078,19 +2281,35 @@ function joinOnlineRoom(){
     if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
     if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.display='block';return;}
     const myNick=currentUserData?currentUserData.nickname:'백';
+    const myUid=currentUser?currentUser.uid:null;
     onlineRoomId=code;onlineMyRole='white';
-    db.ref('rooms/'+code+'/whiteNick').set(myNick).then(()=>{
+    const updates={whiteNick:myNick,whiteUid:myUid};
+    db.ref('rooms/'+code).update(updates).then(()=>{
       msgEl.textContent='입장 성공! 대기 중...';msgEl.style.color='#2e7d32';msgEl.style.display='block';
       db.ref('rooms/'+code+'/status').on('value',snap2=>{
-        if(snap2.val()==='playing')setTimeout(()=>startOnlineGame(code,'white',room.blackNick,myNick),400);
+        if(snap2.val()==='playing')setTimeout(()=>startOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null),400);
       });
     });
   }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
 }
 
-function startOnlineGame(code,role,blackNick,whiteNick){
+function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
   showPage('page-game');
   initGame({online:true,roomId:code,myRole:role,nicknames:{black:blackNick||'흑',white:whiteNick||'백'}});
+
+  // 상대 전적 조회
+  const oppUid=role==='black'?whiteUid:blackUid;
+  const oppKey=role==='black'?'white':'black';
+  const recordElId=oppKey+'RecordDisplay';
+  if(oppUid&&db){
+    db.ref('users/'+oppUid).once('value').then(snap=>{
+      const d=snap.val();
+      if(d){
+        const el=document.getElementById(recordElId);
+        if(el)el.textContent=`승 ${d.wins||0} / 패 ${d.losses||0}`;
+      }
+    }).catch(()=>{});
+  }
 
   // cardAnim 리스너: 상대가 카드 쓸 때 내 화면에도 팝업
   db.ref('rooms/'+code+'/cardAnim').on('value',snap=>{
@@ -2181,7 +2400,8 @@ function startOnlineGame(code,role,blackNick,whiteNick){
       if(isMyTurn()){
         stopOppTimer();
         startTimer();
-        setStatus('내 차례입니다. 카드를 사용하거나 <b>착수만 하기</b>를 누르세요.');
+        setStatus('내 차례입니다. 판을 눌러 착수하거나 카드를 눌러 스킬을 사용하세요.');
+        showPlaceBtn(true);
         // 흑이 새 상태를 re-push해서 백도 최신 상태 공유
         pushGameState();
       }
@@ -2206,56 +2426,78 @@ window.addEventListener('resize',()=>{if(document.getElementById('page-game').cl
 
 // ── Chat ─────────────────────────────────────────────
 let chatRoomId=null,chatMyRole=null,chatListener=null;
+function getChatEls(){
+  // 내 역할에 따라 올바른 패널(상대 패널 아래) 선택
+  // 흑이면 왼쪽(panelBlack 아래 chatPanelLeft), 백이면 오른쪽
+  const side=chatMyRole==='black'?'Left':'Right';
+  return {
+    panel:document.getElementById('chatPanel'+side),
+    messages:document.getElementById('chatMessages'+side),
+    input:document.getElementById('chatInput'+side),
+  };
+}
 function initChat(roomId,role){
   chatRoomId=roomId;chatMyRole=role;
   // 기존 리스너 제거
   if(chatListener&&db)db.ref('rooms/'+chatRoomId+'/chat').off('child_added',chatListener);
-  // 채팅창 표시
-  document.getElementById('chatPanel').classList.add('visible');
-  document.getElementById('chatMessages').innerHTML='';
-  // 시스템 메시지
+  // 양쪽 패널 모두 숨기고 내 쪽만 표시
+  ['chatPanelLeft','chatPanelRight'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.remove('visible');
+  });
+  ['chatMessagesLeft','chatMessagesRight'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML='';
+  });
+  const {panel,input}=getChatEls();
+  if(panel)panel.classList.add('visible');
   appendChatMsg({type:'system',text:'채팅이 연결되었습니다.'});
-  // 리스너 등록
+  // Firebase 리스너
   chatListener=db.ref('rooms/'+roomId+'/chat').limitToLast(100).on('child_added',snap=>{
-    const d=snap.val();
-    if(!d)return;
+    const d=snap.val();if(!d)return;
     appendChatMsg(d);
   });
   // Enter 키
-  const inp=document.getElementById('chatInput');
-  inp.onkeydown=e=>{if(e.key==='Enter')sendChatMsg();};
+  if(input)input.onkeydown=e=>{if(e.key==='Enter')sendChatMsg();};
 }
 function appendChatMsg(d){
-  const el=document.getElementById('chatMessages');
-  if(!el)return;
+  const {messages}=getChatEls();
+  if(!messages)return;
   const div=document.createElement('div');
   if(d.type==='system'){
     div.className='chat-msg system';div.textContent=d.text;
   }else{
     const isMe=d.role===chatMyRole;
     div.className='chat-msg '+(isMe?'me':'opp');
-    div.innerHTML=`<span class="chat-nick">${escHtml(d.nick||d.role)}</span><span>${escHtml(d.text)}</span>`;
+    const nickSpan=document.createElement('span');
+    nickSpan.className='chat-nick';
+    nickSpan.textContent=escHtml(d.nick||d.role);
+    const textNode=document.createTextNode(escHtml(d.text));
+    div.appendChild(nickSpan);div.appendChild(textNode);
   }
-  el.appendChild(div);
-  el.scrollTop=el.scrollHeight;
+  messages.appendChild(div);
+  messages.scrollTop=messages.scrollHeight;
 }
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function sendChatMsg(){
   if(!db||!chatRoomId)return;
-  const inp=document.getElementById('chatInput');
-  const text=inp.value.trim();
+  const {input}=getChatEls();
+  if(!input)return;
+  const text=input.value.trim();
   if(!text)return;
-  if(containsBannedWord(text)){inp.value='';return;}
+  if(containsBannedWord(text)){input.value='';return;}
   if(text.length>100)return;
   const nick=currentUserData?currentUserData.nickname:(chatMyRole==='black'?'흑':'백');
   db.ref('rooms/'+chatRoomId+'/chat').push({role:chatMyRole,nick:nick,text:text,ts:Date.now()});
-  inp.value='';
+  input.value='';
 }
 function stopChat(){
   if(chatListener&&db&&chatRoomId)db.ref('rooms/'+chatRoomId+'/chat').off('child_added',chatListener);
   chatRoomId=null;chatMyRole=null;chatListener=null;
-  const panel=document.getElementById('chatPanel');if(panel)panel.classList.remove('visible');
-  const msgs=document.getElementById('chatMessages');if(msgs)msgs.innerHTML='';
+  ['chatPanelLeft','chatPanelRight'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.remove('visible');
+  });
+  ['chatMessagesLeft','chatMessagesRight'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML='';
+  });
 }
 
 // ── Auto-init Firebase on load ────────────────────────
