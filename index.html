@@ -76,7 +76,7 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .online-section-title{font-size:13px;font-weight:700;color:var(--text2);}
 .room-code-big{font-family:monospace;font-size:28px;font-weight:900;letter-spacing:6px;color:var(--accent);background:var(--bg2);border-radius:8px;padding:12px 18px 12px 24px;text-align:center;}
 /* GAME */
-#page-game{flex-direction:column;background:var(--bg);}
+#page-game{flex-direction:column;background:var(--bg);height:100vh;overflow:hidden;}
 .game-header{padding:8px 13px;background:var(--ui-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px;}
 .gh-logo{font-family:'Black Han Sans',sans-serif;font-size:16px;color:var(--accent);}
 .turn-badge{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:99px;padding:4px 10px;font-size:12px;font-weight:700;}
@@ -163,15 +163,31 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
   100%{transform:rotate(-5deg) translateY(-10px);opacity:0;}
 }
 .deck-pop-anim{animation:deckTopPop 0.18s ease-out forwards;}
-.game-body{display:flex;flex:1;overflow:hidden;}
+.game-body{display:flex;flex:1;overflow:hidden;min-height:0;}
 @media(max-width:700px){
   .game-body{flex-direction:column;overflow-y:auto;}
-  .side-panel{width:100%!important;border-right:none!important;border-left:none!important;border-bottom:1px solid var(--border);}
-  .board-area{padding:6px;}
+  .side-panel{width:100%!important;border-right:none!important;border-left:none!important;border-bottom:1px solid var(--border);overflow-y:visible!important;max-height:none!important;}
+  .board-area{padding:6px;overflow-y:visible!important;}
   .board-wrap{padding:10px;}
 }
-.side-panel{width:205px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+.side-panel{width:205px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;height:100%;}
 .side-panel.right{border-right:none;border-left:1px solid var(--border);}
+/* 채팅창 */
+.chat-panel{display:none;flex-direction:column;border-top:1px solid var(--border);background:var(--ui-bg);flex-shrink:0;max-height:220px;}
+.chat-panel.visible{display:flex;}
+.chat-header{padding:5px 11px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text3);display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.chat-messages{flex:1;overflow-y:auto;padding:5px 10px;display:flex;flex-direction:column;gap:3px;min-height:60px;max-height:130px;}
+.chat-messages::-webkit-scrollbar{width:3px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.chat-msg{font-size:11px;line-height:1.45;word-break:break-all;}
+.chat-msg .chat-nick{font-weight:700;margin-right:4px;}
+.chat-msg.me .chat-nick{color:var(--accent);}
+.chat-msg.opp .chat-nick{color:#1565c0;}
+.chat-msg.system{color:var(--text3);font-style:italic;text-align:center;font-size:10px;}
+.chat-input-row{display:flex;gap:5px;padding:5px 8px;border-top:1px solid var(--border);flex-shrink:0;}
+.chat-input{flex:1;padding:5px 8px;border:1.5px solid var(--border2);border-radius:6px;font-size:12px;outline:none;}
+.chat-input:focus{border-color:var(--accent);}
+.chat-send-btn{padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;}
 .panel-player-header{padding:8px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .panel-player-stone{width:17px;height:17px;border-radius:50%;flex-shrink:0;}
 .panel-player-stone.b{background:radial-gradient(circle at 35% 30%,#555,#111);}
@@ -212,7 +228,7 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .action-btn.place-btn{background:#2e7d32;color:#fff;border-color:#2e7d32;}
 .action-btn.place-btn:disabled{background:var(--border);color:var(--text3);border-color:var(--border);}
 .action-btn.pass-inactive{background:var(--bg2)!important;color:var(--text3)!important;border-color:var(--border)!important;cursor:not-allowed!important;opacity:0.5;}
-.board-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px;gap:8px;min-width:0;}
+.board-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px;gap:8px;min-width:0;overflow-y:auto;height:100%;}
 .board-wrap{background:var(--board-bg);border-radius:5px;padding:16px;box-shadow:0 4px 18px rgba(0,0,0,0.14);flex-shrink:0;}
 canvas#boardCanvas{display:block;touch-action:none;}
 .status-bar{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--text2);text-align:center;width:100%;max-width:540px;}
@@ -458,6 +474,15 @@ canvas#boardCanvas{display:block;touch-action:none;}
         <button class="action-btn use-card" id="wUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
         <button class="action-btn" id="wPassBtn" onclick="passToPlace()">착수만 하기</button>
         <button class="action-btn place-btn" id="wPlaceBtn" onclick="confirmPlace()" disabled style="display:none;">착수 확정</button>
+      </div>
+      <!-- 채팅창 (온라인 전용) -->
+      <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">💬 채팅</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" type="text" placeholder="메시지 입력..." maxlength="100" autocomplete="off">
+          <button class="chat-send-btn" onclick="sendChatMsg()">전송</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1977,7 +2002,7 @@ function doomApply(dir,side){
 // ── Status / quit ─────────────────────────────────────
 function setStatus(msg){const el=document.getElementById('statusBar');if(el)el.innerHTML=msg;}
 function confirmQuit(){document.getElementById('quitModal').classList.add('show');}
-function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
+function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
 function startLocalGame(){onlineRoomId=null;onlineMyRole=null;const nick=currentUserData?currentUserData.nickname:'플레이어';showPage('page-game');initGame({nicknames:{black:nick+'(흑)',white:nick+'(백)'}});}
 
 // ── Online (Full State Sync) ──────────────────────────
@@ -2090,6 +2115,8 @@ function startOnlineGame(code,role,blackNick,whiteNick){
   } else {
     setStatus('흑(상대)의 차례입니다. 대기 중...');
   }
+  // 채팅 초기화
+  initChat(code,role);
 
   // gameState 리스너: 흑이 push할 때마다 백이 수신
   db.ref('rooms/'+code+'/gameState').on('value',snap=>{
@@ -2176,6 +2203,60 @@ function onlineSyncAfterTurn(){
   else if(onlineMyRole==='white')pushWhiteAction();
 }
 window.addEventListener('resize',()=>{if(document.getElementById('page-game').classList.contains('active'))resizeBoard();});
+
+// ── Chat ─────────────────────────────────────────────
+let chatRoomId=null,chatMyRole=null,chatListener=null;
+function initChat(roomId,role){
+  chatRoomId=roomId;chatMyRole=role;
+  // 기존 리스너 제거
+  if(chatListener&&db)db.ref('rooms/'+chatRoomId+'/chat').off('child_added',chatListener);
+  // 채팅창 표시
+  document.getElementById('chatPanel').classList.add('visible');
+  document.getElementById('chatMessages').innerHTML='';
+  // 시스템 메시지
+  appendChatMsg({type:'system',text:'채팅이 연결되었습니다.'});
+  // 리스너 등록
+  chatListener=db.ref('rooms/'+roomId+'/chat').limitToLast(100).on('child_added',snap=>{
+    const d=snap.val();
+    if(!d)return;
+    appendChatMsg(d);
+  });
+  // Enter 키
+  const inp=document.getElementById('chatInput');
+  inp.onkeydown=e=>{if(e.key==='Enter')sendChatMsg();};
+}
+function appendChatMsg(d){
+  const el=document.getElementById('chatMessages');
+  if(!el)return;
+  const div=document.createElement('div');
+  if(d.type==='system'){
+    div.className='chat-msg system';div.textContent=d.text;
+  }else{
+    const isMe=d.role===chatMyRole;
+    div.className='chat-msg '+(isMe?'me':'opp');
+    div.innerHTML=`<span class="chat-nick">${escHtml(d.nick||d.role)}</span><span>${escHtml(d.text)}</span>`;
+  }
+  el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function sendChatMsg(){
+  if(!db||!chatRoomId)return;
+  const inp=document.getElementById('chatInput');
+  const text=inp.value.trim();
+  if(!text)return;
+  if(containsBannedWord(text)){inp.value='';return;}
+  if(text.length>100)return;
+  const nick=currentUserData?currentUserData.nickname:(chatMyRole==='black'?'흑':'백');
+  db.ref('rooms/'+chatRoomId+'/chat').push({role:chatMyRole,nick:nick,text:text,ts:Date.now()});
+  inp.value='';
+}
+function stopChat(){
+  if(chatListener&&db&&chatRoomId)db.ref('rooms/'+chatRoomId+'/chat').off('child_added',chatListener);
+  chatRoomId=null;chatMyRole=null;chatListener=null;
+  const panel=document.getElementById('chatPanel');if(panel)panel.classList.remove('visible');
+  const msgs=document.getElementById('chatMessages');if(msgs)msgs.innerHTML='';
+}
 
 // ── Auto-init Firebase on load ────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
