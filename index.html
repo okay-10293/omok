@@ -1374,28 +1374,28 @@ async function submitAuth(){
       setAuthErr('아이디 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');btn.disabled=false;btn.textContent='회원가입';return;
     }
     try{
+      // _isSignup을 계정 생성 직전에 설정 — createUserWithEmailAndPassword 호출 즉시
+      // onAuthChanged가 발동되므로 그 전에 플래그를 세워야 nickModal이 뜨지 않음
+      window._isSignup=true;
       cred=await auth.createUserWithEmailAndPassword(emailInput,pw);
     }catch(e){
+      window._isSignup=false;
       setAuthErr(fbErrMsg(e.code));btn.disabled=false;btn.textContent='회원가입';return;
     }
     try{
-      // createUserWithEmailAndPassword 직후 DB SDK의 인증 토큰이 즉시 갱신되지 않아
-      // PERMISSION_DENIED로 좀비 계정(Auth만 생성, DB 미생성)이 생기는 경우 방지:
-      // 토큰을 강제로 새로고침하여 DB 쓰기 권한이 확실히 적용되도록 함
       await cred.user.getIdToken(true);
       const userData={nickname:nick,username:rawId.toLowerCase(),email:emailInput,wins:0,losses:0};
       await db.ref('users/'+cred.user.uid).set(userData);
       await db.ref('usernames/'+rawId.toLowerCase()).set({uid:cred.user.uid,email:emailInput});
     }catch(e){
-      // DB 저장 실패 시 방금 생성된 Auth 계정을 삭제하여 좀비 계정(인증은 있지만 데이터 없음) 방지
+      window._isSignup=false;
       try{await cred.user.delete();}catch(delErr){console.warn('좀비 계정 삭제 실패:',delErr);}
       setAuthErr('회원가입 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
       btn.disabled=false;btn.textContent='회원가입';return;
     }
-    let verifyMailErr='';
-    // _isSignup을 이메일 발송 전에 설정 — onAuthChanged가 발동되더라도 무시하도록
-    window._isSignup=true;window._pendingVerifyUser=cred.user;
+    window._pendingVerifyUser=cred.user;
     window._pendingVerifyNick=nick;
+    let verifyMailErr='';
     try{
       await cred.user.sendEmailVerification();
     }catch(e){
