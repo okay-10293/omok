@@ -1369,11 +1369,17 @@ async function submitAuth(){
       setAuthErr(fbErrMsg(e.code));btn.disabled=false;btn.textContent='회원가입';return;
     }
     try{
+      // createUserWithEmailAndPassword 직후 DB SDK의 인증 토큰이 즉시 갱신되지 않아
+      // PERMISSION_DENIED로 좀비 계정(Auth만 생성, DB 미생성)이 생기는 경우 방지:
+      // 토큰을 강제로 새로고침하여 DB 쓰기 권한이 확실히 적용되도록 함
+      await cred.user.getIdToken(true);
       const userData={nickname:nick,username:rawId.toLowerCase(),email:emailInput,wins:0,losses:0};
       await db.ref('users/'+cred.user.uid).set(userData);
       await db.ref('usernames/'+rawId.toLowerCase()).set({uid:cred.user.uid,email:emailInput});
     }catch(e){
-      setAuthErr('계정은 생성되었으나 정보 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      // DB 저장 실패 시 방금 생성된 Auth 계정을 삭제하여 좀비 계정(인증은 있지만 데이터 없음) 방지
+      try{await cred.user.delete();}catch(delErr){console.warn('좀비 계정 삭제 실패:',delErr);}
+      setAuthErr('회원가입 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
       btn.disabled=false;btn.textContent='회원가입';return;
     }
     let verifyMailErr='';
@@ -1440,8 +1446,13 @@ async function submitNickname(){
   if(snap.exists()){errEl.textContent='이미 사용 중인 아이디입니다.';return;}
   const userEmail=currentUser&&currentUser.email?currentUser.email:'';
   const data={nickname:nick,username:newId,email:userEmail,wins:0,losses:0};
-  await db.ref('users/'+uid).set(data);
-  await db.ref('usernames/'+newId).set({uid:uid,email:userEmail});
+  try{
+    await db.ref('users/'+uid).set(data);
+    await db.ref('usernames/'+newId).set({uid:uid,email:userEmail});
+  }catch(e){
+    errEl.textContent='저장 중 오류가 발생했습니다. 다시 시도해주세요.';
+    return;
+  }
   currentUserData=data;
   window._pendingUid=null;
   closeModal('nickModal');
@@ -1526,6 +1537,15 @@ async function onAuthChanged(user){
     // 게스트 모드이면 auth 페이지로 가지 않음
     if(window._isGuestMode)return;
     showPage('page-auth');return;
+  }
+  // 좀비 계정 복구: users/{uid}에 데이터가 없으면 (가입 중 DB 저장 실패로 인증 메일을 못 받은 경우 포함)
+  // 이메일 인증 여부와 무관하게 닉네임/아이디 설정 모달로 보내 정상 계정으로 복구할 수 있게 한다.
+  const preSnap=await db.ref('users/'+user.uid).once('value');
+  if(!preSnap.exists()){
+    window._pendingUid=user.uid;
+    document.getElementById('emailVerifyModal').classList.remove('show');
+    document.getElementById('nickModal').classList.add('show');
+    return;
   }
   // 이메일/비밀번호 계정인데 이메일 인증 안 된 경우 → 로그인 차단
   const isEmailProvider=user.providerData&&user.providerData[0]&&user.providerData[0].providerId==='password';
