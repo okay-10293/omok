@@ -1249,19 +1249,32 @@ async function findAccountId(){
   const btn=document.getElementById('findIdBtn');
   errEl.style.color='var(--red)';errEl.textContent='';
   resultEl.style.display='none';resultEl.textContent='';
-  const email=document.getElementById('findIdEmail').value.trim();
+  const email=document.getElementById('findIdEmail').value.trim().toLowerCase();
   if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){errEl.textContent='올바른 이메일 주소를 입력하세요.';return;}
   if(!initFirebase()){errEl.textContent='Firebase 초기화에 실패했습니다.';return;}
   btn.disabled=true;btn.textContent='조회 중...';
   try{
-    const snap=await db.ref('users').orderByChild('email').equalTo(email).once('value');
-    if(!snap.exists()){errEl.textContent='해당 이메일로 가입된 계정을 찾을 수 없습니다.';btn.disabled=false;btn.textContent='아이디 찾기';return;}
+    // usernames는 ".read":true — 비로그인 상태에서도 접근 가능
+    // users는 auth != null 조건이라 비로그인에서 PERMISSION_DENIED 발생
+    const snap=await db.ref('usernames').orderByChild('email').equalTo(email).once('value');
+    if(!snap.exists()){
+      errEl.textContent='해당 이메일로 가입된 계정을 찾을 수 없습니다.';
+      btn.disabled=false;btn.textContent='아이디 찾기';return;
+    }
     let found=null;
-    snap.forEach(c=>{const v=c.val();if(v.username){found=v.username;}});
-    if(!found){errEl.textContent='이 계정은 Google 로그인 계정입니다. Google로 로그인해주세요.';btn.disabled=false;btn.textContent='아이디 찾기';return;}
+    snap.forEach(c=>{
+      // usernames 키 자체가 아이디(lowercase)
+      if(!found)found=c.key;
+    });
+    if(!found){
+      errEl.textContent='이 계정은 Google 로그인 계정입니다. Google로 로그인해주세요.';
+      btn.disabled=false;btn.textContent='아이디 찾기';return;
+    }
     resultEl.style.display='block';
     resultEl.innerHTML=`회원님의 아이디는<br><b style="font-size:16px;letter-spacing:1px;">${found}</b><br><span style="font-size:11px;color:#388e3c;">입니다.</span>`;
-  }catch(e){errEl.textContent='조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';}
+  }catch(e){
+    errEl.textContent='조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  }
   btn.disabled=false;btn.textContent='아이디 찾기';
 }
 async function sendPasswordReset(){
