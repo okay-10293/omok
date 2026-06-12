@@ -196,6 +196,24 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .online-section{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:11px;padding:16px;display:flex;flex-direction:column;gap:9px;}
 .online-section-title{font-size:13px;font-weight:700;color:var(--text2);}
 .room-code-big{font-family:monospace;font-size:28px;font-weight:900;letter-spacing:6px;color:var(--accent);background:var(--bg2);border-radius:8px;padding:12px 18px 12px 24px;text-align:center;}
+/* 대기방 */
+.lobby-tabs{display:flex;border:1.5px solid var(--border2);border-radius:10px;overflow:hidden;}
+.lobby-tab{flex:1;padding:10px;background:var(--ui-bg);border:none;font-size:13px;font-weight:700;color:var(--text3);}
+.lobby-tab.active{background:var(--accent);color:#fff;}
+.lobby-room-list{display:flex;flex-direction:column;gap:7px;max-height:340px;overflow-y:auto;}
+.lobby-room-item{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.lobby-room-item:hover{border-color:var(--accent);}
+.lobby-room-info{display:flex;flex-direction:column;gap:3px;}
+.lobby-room-host{font-size:13px;font-weight:700;}
+.lobby-room-meta{font-size:11px;color:var(--text3);}
+.lobby-room-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#e8f5e9;color:#2e7d32;flex-shrink:0;}
+.lobby-join-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;flex-shrink:0;}
+.lobby-empty{text-align:center;padding:28px 0;font-size:13px;color:var(--text3);}
+.lobby-refresh-row{display:flex;align-items:center;justify-content:space-between;}
+.lobby-refresh-btn{background:none;border:1.5px solid var(--border2);border-radius:7px;padding:5px 11px;font-size:12px;color:var(--text2);font-weight:600;}
+.lobby-room-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;}
+.lobby-room-type.strategic{background:#fff8e1;color:#b8860b;}
+.lobby-room-type.classic{background:#e3f2fd;color:#1565c0;}
 /* GAME */
 #page-game{flex-direction:column;background:var(--bg);height:100vh;overflow:hidden;}
 .game-header{padding:8px 13px;background:var(--ui-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px;}
@@ -463,6 +481,9 @@ canvas#boardCanvas{display:block;touch-action:none;}
     <button onclick="closeEmailVerifyModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1;" title="닫기">×</button>
     <h3>이메일 인증</h3>
     <p id="emailVerifyMsg">가입하신 이메일로 인증 메일을 보냈습니다.<br>메일함을 확인하고 인증 링크를 클릭한 뒤 아래 버튼을 눌러주세요.</p>
+    <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:7px;padding:8px 11px;font-size:12px;color:#795548;margin-bottom:10px;">
+      📬 메일이 보이지 않으면 <b>스팸함</b>도 확인해주세요.
+    </div>
     <div class="auth-err" id="emailVerifyErr" style="margin-bottom:8px;"></div>
     <div class="modal-btns" style="flex-direction:column;gap:6px;">
       <button class="modal-btn confirm" onclick="checkEmailVerified()">인증 완료 확인</button>
@@ -840,27 +861,59 @@ canvas#boardCanvas{display:block;touch-action:none;}
   <div class="book-grid" id="bookGrid"></div>
 </div>
 <!-- ONLINE -->
-<div id="page-online" class="page" style="align-items:center;justify-content:center;background:var(--bg);">
-  <div class="online-wrap">
+<div id="page-online" class="page" style="align-items:center;justify-content:flex-start;background:var(--bg);overflow-y:auto;">
+  <div class="online-wrap" style="padding-top:18px;">
     <div style="display:flex;align-items:center;gap:9px;">
-      <button class="back-btn" onclick="showPage('page-menu')">←</button>
+      <button class="back-btn" onclick="leaveOnlinePage()">←</button>
       <span style="font-family:'Black Han Sans',sans-serif;font-size:21px;color:var(--accent);">온라인 대전</span>
     </div>
-    <div class="online-section">
-      <div class="online-section-title">방 만들기</div>
-      <button class="menu-btn primary" onclick="createOnlineRoom()">새 방 만들기</button>
-      <div id="roomCodeDisplay" style="display:none;flex-direction:column;gap:7px;align-items:center;">
-        <div style="font-size:12px;color:var(--text3);">방 코드 — 상대방에게 전달하세요</div>
-        <div class="room-code-big" id="roomCodeText"></div>
-        <div id="roomWaitMsg" style="font-size:12px;color:var(--text3);">상대방 입장 대기 중...</div>
+    <!-- 탭 -->
+    <div class="lobby-tabs">
+      <button class="lobby-tab active" id="lobbyTabWait" onclick="switchLobbyTab('wait')">대기방 목록</button>
+      <button class="lobby-tab" id="lobbyTabCode" onclick="switchLobbyTab('code')">코드로 입장</button>
+    </div>
+
+    <!-- 대기방 목록 탭 -->
+    <div id="lobbyPanelWait">
+      <!-- 방 만들기 -->
+      <div class="online-section">
+        <div class="online-section-title">방 만들기</div>
+        <div style="display:flex;gap:7px;">
+          <select id="lobbyGameType" style="flex:1;padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:13px;font-weight:700;color:var(--text);background:var(--ui-bg);outline:none;">
+            <option value="strategic">전략적 오목</option>
+            <option value="classic">클래식 오목</option>
+          </select>
+          <button class="menu-btn primary" style="flex:1;padding:10px;" onclick="createLobbyRoom()">방 만들기</button>
+        </div>
+        <div id="lobbyMyRoomDisplay" style="display:none;flex-direction:column;gap:7px;align-items:center;">
+          <div style="font-size:12px;color:var(--text3);">방이 열렸습니다 — 상대방 입장 대기 중...</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:11px;color:var(--text3);">코드:</div>
+            <div class="room-code-big" id="lobbyMyRoomCode" style="font-size:20px;padding:7px 14px 7px 18px;letter-spacing:4px;"></div>
+          </div>
+          <button onclick="cancelLobbyRoom()" style="background:none;border:1.5px solid var(--border2);border-radius:7px;padding:6px 16px;font-size:12px;color:var(--text2);">방 취소</button>
+        </div>
+      </div>
+      <!-- 목록 -->
+      <div class="online-section">
+        <div class="lobby-refresh-row">
+          <div class="online-section-title">열린 방 목록</div>
+          <button class="lobby-refresh-btn" onclick="loadLobbyRooms()">↻ 새로고침</button>
+        </div>
+        <div id="lobbyRoomList"><div class="lobby-empty">대기 중인 방을 불러오는 중...</div></div>
       </div>
     </div>
-    <div class="online-section">
-      <div class="online-section-title">방 입장하기</div>
-      <input id="roomCodeInput" type="text" maxlength="6" placeholder="방 코드 6자리"
-        style="padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;">
-      <button class="menu-btn primary" onclick="joinOnlineRoom()">입장하기</button>
-      <div id="joinMsg" style="font-size:12px;color:var(--red);text-align:center;display:none;"></div>
+
+    <!-- 코드로 입장 탭 -->
+    <div id="lobbyPanelCode" style="display:none;">
+      <div class="online-section">
+        <div class="online-section-title">방 코드로 입장</div>
+        <input id="roomCodeInput" type="text" maxlength="6" placeholder="방 코드 6자리"
+          style="padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;"
+          oninput="this.value=this.value.toUpperCase()">
+        <button class="menu-btn primary" onclick="joinOnlineRoom()">입장하기</button>
+        <div id="joinMsg" style="font-size:12px;color:var(--red);text-align:center;display:none;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2013,6 +2066,15 @@ function showPage(id){
   document.getElementById(id).classList.add('active');
   if(id==='page-book')renderBook();
   if(id==='page-menu'){drawMenuBoard();closePlayModeModal();}
+  if(id==='page-online'){
+    switchLobbyTab('wait');
+    startLobbyListener();
+    const myDisp=document.getElementById('lobbyMyRoomDisplay');
+    if(myDisp)myDisp.style.display='none';
+    _lobbyMyRoomId=null;_lobbyMyRoomType=null;
+    const jm=document.getElementById('joinMsg');if(jm)jm.style.display='none';
+    const rci=document.getElementById('roomCodeInput');if(rci)rci.value='';
+  }
 }
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
@@ -3483,19 +3545,167 @@ function pushGameState(){
   db.ref('rooms/'+onlineRoomId+'/gameState').set({data:stateStr,ts:Date.now()});
 }
 
+// ── 대기방 로비 ──────────────────────────────────────────
+let _lobbyRoomListener=null;
+let _lobbyMyRoomId=null;
+let _lobbyMyRoomType=null;
+
+function switchLobbyTab(t){
+  document.getElementById('lobbyTabWait').classList.toggle('active',t==='wait');
+  document.getElementById('lobbyTabCode').classList.toggle('active',t==='code');
+  document.getElementById('lobbyPanelWait').style.display=t==='wait'?'block':'none';
+  document.getElementById('lobbyPanelCode').style.display=t==='code'?'block':'none';
+  if(t==='wait')loadLobbyRooms();
+}
+
+function leaveOnlinePage(){
+  if(_lobbyMyRoomId){cancelLobbyRoom();}
+  stopLobbyListener();
+  showPage('page-menu');
+}
+
+function startLobbyListener(){
+  if(!db)return;
+  stopLobbyListener();
+  _lobbyRoomListener=db.ref('rooms').orderByChild('status').equalTo('waiting').on('value',()=>loadLobbyRooms());
+}
+
+function stopLobbyListener(){
+  if(_lobbyRoomListener&&db){
+    try{db.ref('rooms').off('value',_lobbyRoomListener);}catch(e){}
+    _lobbyRoomListener=null;
+  }
+}
+
+function loadLobbyRooms(){
+  if(!db){return;}
+  const listEl=document.getElementById('lobbyRoomList');
+  if(!listEl)return;
+  db.ref('rooms').orderByChild('status').equalTo('waiting').once('value').then(snap=>{
+    const rooms=[];
+    snap.forEach(c=>{
+      const v=c.val();
+      // 너무 오래된 방 제외 (30분)
+      if(Date.now()-(v.createdAt||0)>30*60*1000)return;
+      // 내가 만든 방 제외
+      if(c.key===_lobbyMyRoomId)return;
+      rooms.push({id:c.key,...v});
+    });
+    if(rooms.length===0){
+      listEl.innerHTML='<div class="lobby-empty">대기 중인 방이 없습니다.<br>방을 만들어 친구를 기다려보세요!</div>';
+      return;
+    }
+    listEl.innerHTML=rooms.map(r=>{
+      const isClassic=r.classic||r.id&&r.id.startsWith('C');
+      const typeLabel=isClassic?'클래식':'전략적';
+      const typeCls=isClassic?'classic':'strategic';
+      const elapsed=Math.floor((Date.now()-(r.createdAt||Date.now()))/1000);
+      const timeStr=elapsed<60?`${elapsed}초 전`:`${Math.floor(elapsed/60)}분 전`;
+      return `<div class="lobby-room-item">
+        <div class="lobby-room-info">
+          <div class="lobby-room-host">${escHtml(r.blackNick||'?')}</div>
+          <div class="lobby-room-meta">${timeStr} · 코드: ${r.id}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="lobby-room-type ${typeCls}">${typeLabel}</span>
+          <button class="lobby-join-btn" onclick="joinLobbyRoom('${r.id}','${isClassic?'classic':'strategic'}')">입장</button>
+        </div>
+      </div>`;
+    }).join('');
+  }).catch(()=>{
+    if(listEl)listEl.innerHTML='<div class="lobby-empty">목록을 불러오지 못했습니다.</div>';
+  });
+}
+
+function createLobbyRoom(){
+  if(!db){alert('Firebase 초기화 실패');return;}
+  if(_lobbyMyRoomId){alert('이미 방을 만들었습니다.');return;}
+  const gameType=document.getElementById('lobbyGameType').value;
+  const isClassic=gameType==='classic';
+  const code=isClassic?'C'+genCode():genCode();
+  _lobbyMyRoomId=code;
+  _lobbyMyRoomType=gameType;
+  const myNick=currentUserData?currentUserData.nickname:'흑';
+  const myUid=currentUser?currentUser.uid:null;
+  db.ref('rooms/'+code).set({
+    status:'waiting',
+    blackNick:myNick,blackUid:myUid,
+    whiteNick:null,whiteUid:null,
+    classic:isClassic,
+    gameState:null,
+    createdAt:Date.now()
+  }).then(()=>{
+    document.getElementById('lobbyMyRoomDisplay').style.display='flex';
+    document.getElementById('lobbyMyRoomCode').textContent=code;
+    loadLobbyRooms();
+    // 상대 입장 감지
+    db.ref('rooms/'+code+'/whiteNick').on('value',snap=>{
+      if(!snap.val())return;
+      db.ref('rooms/'+code+'/status').set('playing');
+      db.ref('rooms/'+code).once('value').then(s=>{
+        const r=s.val()||{};
+        stopLobbyListener();
+        setTimeout(()=>{
+          if(isClassic){
+            startClassicOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null);
+          }else{
+            startOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null);
+          }
+        },800);
+      });
+    });
+  }).catch(e=>alert('방 생성 실패: '+e.message));
+}
+
+function cancelLobbyRoom(){
+  if(!_lobbyMyRoomId||!db)return;
+  db.ref('rooms/'+_lobbyMyRoomId).off();
+  db.ref('rooms/'+_lobbyMyRoomId+'/status').set('cancelled').catch(()=>{});
+  db.ref('rooms/'+_lobbyMyRoomId).remove().catch(()=>{});
+  _lobbyMyRoomId=null;_lobbyMyRoomType=null;
+  document.getElementById('lobbyMyRoomDisplay').style.display='none';
+  document.getElementById('lobbyMyRoomCode').textContent='';
+  loadLobbyRooms();
+}
+
+function joinLobbyRoom(code,gameType){
+  if(!db)return;
+  const myNick=currentUserData?currentUserData.nickname:'백';
+  const myUid=currentUser?currentUser.uid:null;
+  const isClassic=gameType==='classic';
+  db.ref('rooms/'+code).once('value').then(snap=>{
+    const room=snap.val();
+    if(!room||room.status!=='waiting'){alert('이미 시작됐거나 없는 방입니다.');loadLobbyRooms();return;}
+    onlineRoomId=code;onlineMyRole='white';
+    db.ref('rooms/'+code).update({whiteNick:myNick,whiteUid:myUid}).then(()=>{
+      stopLobbyListener();
+      db.ref('rooms/'+code+'/status').on('value',s=>{
+        if(s.val()==='playing'){
+          setTimeout(()=>{
+            if(isClassic){
+              startClassicOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null);
+            }else{
+              startOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null);
+            }
+          },400);
+        }
+      });
+    });
+  }).catch(e=>alert('입장 실패: '+e.message));
+}
+
 function createOnlineRoom(){
   if(!db){alert('Firebase 초기화 실패');return;}
   const code=genCode();onlineRoomId=code;onlineMyRole='black';
   const myNick=currentUserData?currentUserData.nickname:'흑';
   const myUid=currentUser?currentUser.uid:null;
   db.ref('rooms/'+code).set({status:'waiting',blackNick:myNick,blackUid:myUid,whiteNick:null,whiteUid:null,gameState:null,createdAt:Date.now()}).then(()=>{
-    const disp=document.getElementById('roomCodeDisplay');disp.style.display='flex';
-    document.getElementById('roomCodeText').textContent=code;
+    const disp=document.getElementById('roomCodeDisplay');if(disp){disp.style.display='flex';}
+    const ct=document.getElementById('roomCodeText');if(ct)ct.textContent=code;
     db.ref('rooms/'+code+'/whiteNick').on('value',snap=>{
       if(snap.val()){
-        document.getElementById('roomWaitMsg').textContent='상대방 입장! 게임 시작...';
+        const wm=document.getElementById('roomWaitMsg');if(wm)wm.textContent='상대방 입장! 게임 시작...';
         db.ref('rooms/'+code+'/status').set('playing');
-        // whiteUid도 같이 가져오기
         db.ref('rooms/'+code).once('value').then(s=>{
           const r=s.val()||{};
           setTimeout(()=>startOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null),800);
