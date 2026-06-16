@@ -19,25 +19,40 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .loading-spinner{width:34px;height:34px;border:3.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .page.active{display:flex;flex-direction:column;}
-/* AUTH */
-#page-auth{align-items:center;justify-content:center;background:var(--bg);}
-.auth-wrap{width:100%;max-width:400px;padding:32px 20px;display:flex;flex-direction:column;align-items:center;gap:22px;}
-.auth-logo h1{font-family:'Black Han Sans',sans-serif;font-size:38px;color:var(--accent);letter-spacing:2px;text-align:center;}
-.auth-logo p{font-size:13px;color:var(--text3);text-align:center;margin-top:4px;}
-.auth-tabs{display:flex;width:100%;border:1.5px solid var(--border2);border-radius:10px;overflow:hidden;}
-.auth-tab{flex:1;padding:11px;background:var(--ui-bg);border:none;font-size:14px;font-weight:700;color:var(--text3);}
-.auth-tab.active{background:var(--accent);color:#fff;}
-.auth-form{width:100%;display:flex;flex-direction:column;gap:9px;}
-.auth-input{padding:12px 14px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;outline:none;width:100%;}
+/* AUTH — 리디자인 */
+#page-auth{align-items:center;justify-content:center;background:linear-gradient(160deg,#1a1410 0%,#2c1f0e 50%,#1a1410 100%);min-height:100vh;position:relative;overflow:hidden;}
+#page-auth::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(184,134,11,0.18) 0%,transparent 65%);pointer-events:none;}
+.auth-outer{width:100%;max-width:420px;padding:28px 20px 36px;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:1;}
+.auth-logo-block{text-align:center;margin-bottom:24px;}
+.auth-logo-block h1{font-family:'Black Han Sans',sans-serif;font-size:42px;color:var(--accent);letter-spacing:3px;line-height:1;text-shadow:0 2px 24px rgba(184,134,11,0.35);}
+.auth-logo-block p{font-size:11px;color:rgba(255,255,255,0.32);letter-spacing:2px;margin-top:7px;text-transform:uppercase;}
+.auth-feature-tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:22px;}
+.auth-feature-tag{font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.38);font-weight:600;}
+.auth-card{width:100%;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:26px 22px 22px;box-shadow:0 24px 60px rgba(0,0,0,0.45);}
+.auth-tab-bar{display:flex;background:rgba(0,0,0,0.25);border-radius:10px;padding:3px;gap:3px;margin-bottom:20px;}
+.auth-tab{flex:1;padding:9px;background:transparent;border:none;font-size:13.5px;font-weight:700;color:rgba(255,255,255,0.35);border-radius:8px;transition:all .2s;}
+.auth-tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(184,134,11,0.4);}
+.auth-field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.auth-field label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-transform:uppercase;}
+.auth-input{padding:13px 15px;background:var(--bg);border:1.5px solid var(--border2);border-radius:11px;font-size:14px;outline:none;width:100%;color:var(--text);transition:border-color .2s,background .2s;}
 .auth-input:focus{border-color:var(--accent);}
-.auth-btn{width:100%;padding:13px;border:none;border-radius:9px;font-size:15px;font-weight:700;}
-.auth-btn.primary{background:var(--accent);color:#fff;}
-.auth-btn.google{background:#fff;color:#444;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:10px;}
-.auth-divider{display:flex;align-items:center;gap:10px;width:100%;color:var(--text3);font-size:12px;}
-.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
-.auth-err{font-size:12px;color:var(--red);text-align:center;min-height:16px;}
-.auth-find-link{background:none;border:none;font-size:12px;color:var(--text3);text-decoration:underline;text-underline-offset:2px;padding:2px;align-self:center;}
-.auth-find-link:hover{color:var(--accent);}
+.auth-card .auth-input{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.1);color:#fff;}
+.auth-card .auth-input::placeholder{color:rgba(255,255,255,0.22);}
+.auth-card .auth-input:focus{border-color:var(--accent);background:rgba(255,255,255,0.1);}
+.auth-submit-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:800;background:var(--accent);color:#fff;margin-top:6px;box-shadow:0 4px 18px rgba(184,134,11,0.4);transition:opacity .15s,transform .12s;letter-spacing:0.5px;}
+.auth-submit-btn:active{opacity:.85;transform:scale(0.98);}
+.auth-google-btn{width:100%;padding:13px;border:1.5px solid rgba(255,255,255,0.14);border-radius:12px;font-size:14px;font-weight:700;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75);display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,border-color .2s;}
+.auth-google-btn:active{background:rgba(255,255,255,0.12);}
+.auth-guest-btn{width:100%;padding:11px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;font-size:13px;font-weight:600;background:transparent;color:rgba(255,255,255,0.28);transition:all .2s;}
+.auth-guest-btn:active{color:rgba(255,255,255,0.5);}
+.auth-sep{display:flex;align-items:center;gap:10px;margin:14px 0;color:rgba(255,255,255,0.18);font-size:11px;}
+.auth-sep::before,.auth-sep::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08);}
+.auth-err{font-size:12px;color:#ff6b6b;text-align:center;min-height:15px;margin:2px 0 4px;}
+.auth-find-link{background:none;border:none;font-size:12px;color:rgba(255,255,255,0.28);padding:4px;align-self:center;margin-top:4px;}
+.auth-find-link:hover{color:rgba(255,255,255,0.55);}
+.auth-footer-links{display:flex;gap:20px;justify-content:center;margin-top:18px;}
+.auth-footer-link{background:none;border:none;font-size:12px;color:rgba(255,255,255,0.25);padding:4px;transition:color .15s;letter-spacing:0.2px;}
+.auth-footer-link:hover{color:rgba(255,255,255,0.52);}
 @keyframes trapPop{0%{transform:scale(0.5);opacity:1;}60%{transform:scale(1.3);opacity:1;}100%{transform:scale(1.5);opacity:0;}}
 /* 함정/지뢰 폭발 파편 이펙트 */
 @keyframes shard{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
@@ -431,48 +446,69 @@ canvas#boardCanvas{display:block;touch-action:none;}
 </div>
 <!-- AUTH -->
 <div id="page-auth" class="page">
-
-  <div class="auth-wrap">
-    <div class="auth-logo"><h1>전략적 오목</h1><p>Strategic Omok — 카드로 판을 뒤집어라</p></div>
-    <div style="width:100%;background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1.5px solid var(--border);border-radius:11px;padding:13px 15px;display:flex;flex-direction:column;gap:7px;">
-      <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.5px;">게임 소개</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.65;">
-        오목 위에 카드 전략을 더한 새로운 보드게임입니다.<br>
-        <b>5목</b>을 먼저 완성하면 승리!<br>
-        <span style="color:var(--accent);">▸ 착수 + 카드 스킬</span>로 상대를 압도하세요.
+  <div class="auth-outer">
+    <!-- 로고 -->
+    <div class="auth-logo-block">
+      <h1>전략적 오목</h1>
+      <p>Strategic Omok</p>
+    </div>
+    <!-- 게임 소개 태그 -->
+    <div class="auth-feature-tags">
+      <span class="auth-feature-tag">로컬 2인</span>
+      <span class="auth-feature-tag">온라인 대전</span>
+      <span class="auth-feature-tag">카드 40종+</span>
+      <span class="auth-feature-tag">AI 대전</span>
+    </div>
+    <!-- 카드 본체 -->
+    <div class="auth-card">
+      <!-- 탭 -->
+      <div class="auth-tab-bar">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">로그인</button>
+        <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">회원가입</button>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:99px;font-weight:700;">로컬 2인</span>
-        <span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:99px;font-weight:700;">온라인 대전</span>
-        <span style="font-size:11px;background:#fff9c4;color:#f9a825;padding:2px 8px;border-radius:99px;font-weight:700;">카드 40종+</span>
-        <span style="font-size:11px;background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:99px;font-weight:700;">합성 시스템</span>
+      <!-- 입력 폼 -->
+      <div id="authFormInner" style="display:flex;flex-direction:column;">
+        <div class="auth-field">
+          <label id="authIdLabel">아이디 또는 이메일</label>
+          <input class="auth-input" id="authId" type="text" placeholder="아이디 또는 이메일" maxlength="254" autocomplete="off" inputmode="email">
+        </div>
+        <div class="auth-field">
+          <label>비밀번호</label>
+          <input class="auth-input" id="authPw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+        </div>
+        <div class="auth-field" id="authPw2Field" style="display:none;">
+          <label>비밀번호 확인</label>
+          <input class="auth-input" id="authPw2" type="password" placeholder="비밀번호 확인" autocomplete="new-password">
+        </div>
+        <div class="auth-field" id="authEmailField" style="display:none;">
+          <label>이메일 <span style="font-size:10px;color:rgba(255,255,255,0.25);text-transform:none;font-weight:500;">(인증·계정 복구용)</span></label>
+          <input class="auth-input" id="authEmail" type="email" placeholder="example@email.com" maxlength="254" autocomplete="email">
+        </div>
+        <div class="auth-field" id="authNickField" style="display:none;">
+          <label>닉네임 <span style="font-size:10px;color:rgba(255,255,255,0.25);text-transform:none;font-weight:500;">(2~10자, 게임에 표시)</span></label>
+          <input class="auth-input" id="authNick" type="text" placeholder="닉네임 입력" maxlength="10">
+        </div>
+        <div class="auth-err" id="authErr"></div>
+        <button class="auth-submit-btn" onclick="submitAuth()" id="authSubmitBtn">로그인</button>
+        <button class="auth-find-link" id="authFindLink" onclick="openFindAccountModal()">아이디 / 비밀번호를 잊으셨나요?</button>
       </div>
+      <!-- 구분선 -->
+      <div class="auth-sep">또는</div>
+      <!-- 구글 -->
+      <button class="auth-google-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
+        <svg width="17" height="17" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+        Google로 계속하기
+      </button>
+      <div class="auth-sep">또는</div>
+      <button class="auth-guest-btn" onclick="loginAsGuest()">게스트로 플레이</button>
+      <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin-top:8px;">게스트는 전적이 저장되지 않으며 창을 닫으면 사라집니다.</p>
     </div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">로그인</button>
-      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">회원가입</button>
+    <!-- 하단 링크 -->
+    <div class="auth-footer-links">
+      <button class="auth-footer-link" onclick="openContactModal()">문의하기</button>
+      <span style="color:rgba(255,255,255,0.1);font-size:12px;line-height:1.8;">|</span>
+      <button class="auth-footer-link" onclick="openSuggestionModal()">건의사항</button>
     </div>
-    <div class="auth-form">
-      <!-- 로그인: 아이디+비번 / 회원가입: 아이디+비번+비번확인+닉네임 -->
-      <input class="auth-input" id="authId" type="text" placeholder="아이디 또는 이메일" maxlength="254" autocomplete="off" inputmode="email">
-      <input class="auth-input" id="authPw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
-      <input class="auth-input" id="authPw2" type="password" placeholder="비밀번호 확인" style="display:none;" autocomplete="new-password">
-      <input class="auth-input" id="authEmail" type="email" placeholder="이메일 (인증용)" maxlength="254" style="display:none;" autocomplete="email">
-      <input class="auth-input" id="authNick" type="text" placeholder="닉네임 (2~10자, 게임에 표시됨)" maxlength="10" style="display:none;">
-      <div class="auth-err" id="authErr"></div>
-      <button class="auth-btn primary" onclick="submitAuth()" id="authSubmitBtn">로그인</button>
-      <button class="auth-find-link" id="authFindLink" onclick="openFindAccountModal()">아이디/비밀번호를 잃어버렸나요?</button>
-    </div>
-    <div class="auth-divider">또는</div>
-    <button class="auth-btn google" id="googleLoginBtn" onclick="loginWithGoogle()">
-      <svg width="17" height="17" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-      Google로 계속하기
-    </button>
-    <div class="auth-divider">또는</div>
-    <button class="auth-btn" style="background:var(--bg2);color:var(--text2);border:1.5px solid var(--border2);" onclick="loginAsGuest()">
-      게스트로 플레이 (로그인 불필요)
-    </button>
-    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:-8px;">게스트는 전적이 저장되지 않으며 창을 닫으면 사라집니다.</p>
   </div>
 </div>
 <!-- EMAIL VERIFY MODAL -->
@@ -515,6 +551,58 @@ canvas#boardCanvas{display:block;touch-action:none;}
     </div>
   </div>
 </div>
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-box" style="max-width:380px;position:relative;">
+    <button onclick="closeModal('contactModal')" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    <h3 style="margin-bottom:6px;">문의하기</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">아래 내용을 작성하면 이메일로 전송됩니다.<br>보통 2~3일 내 답변드립니다.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">회신받을 이메일</label>
+        <input class="auth-input" id="contactEmail" type="email" placeholder="your@email.com" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border2);">
+      </div>
+      <div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">문의 유형</label>
+        <select id="contactType" style="width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;">
+          <option value="bug">버그 / 오류 신고</option>
+          <option value="account">계정 관련</option>
+          <option value="game">게임 관련</option>
+          <option value="etc">기타</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">내용</label>
+        <textarea id="contactBody" placeholder="문의 내용을 입력해주세요." maxlength="1000" style="width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;resize:none;min-height:120px;line-height:1.6;"></textarea>
+        <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:3px;"><span id="contactBodyCount">0</span>/1000</div>
+      </div>
+    </div>
+    <div id="contactErr" style="font-size:12px;color:var(--red);min-height:15px;margin-bottom:8px;"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal('contactModal')">취소</button>
+      <button class="modal-btn confirm" id="contactSendBtn" onclick="sendContactEmail()">이메일로 보내기</button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px;">또는 직접 이메일 : <a href="mailto:okayt10293@gmail.com" style="color:var(--accent);text-decoration:none;">okayt10293@gmail.com</a></p>
+  </div>
+</div>
+
+<!-- SUGGESTION MODAL -->
+<div class="modal-overlay" id="suggestionModal">
+  <div class="modal-box" style="max-width:380px;position:relative;">
+    <button onclick="closeModal('suggestionModal')" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    <h3 style="margin-bottom:6px;">건의사항</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">게임 개선을 위한 의견을 남겨주세요.<br>소중한 의견 감사합니다!</p>
+    <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:11px;padding:14px 16px;margin-bottom:16px;">
+      <p style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:6px;">구글 폼으로 건의하기</p>
+      <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">신규 카드 아이디어, 기능 요청, 밸런스 피드백 등 어떤 의견이든 환영합니다!</p>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSf9Gesp6N2e20o2ndN1q2KLFDWUeIFAPMqe51D8KrTlqNSm_g/viewform?usp=publish-editor" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px;background:var(--accent);color:#fff;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;letter-spacing:0.5px;">구글 폼 작성하기 →</a>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal('suggestionModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- NICKNAME MODAL -->
 <div class="modal-overlay" id="nickModal">
   <div class="modal-box" style="max-width:360px;">
@@ -742,6 +830,14 @@ canvas#boardCanvas{display:block;touch-action:none;}
         <button class="menu-small-btn" onclick="showPage('page-book')">
           <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
           카드 도감
+        </button>
+        <button class="menu-small-btn" onclick="openContactModal()">
+          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+          문의하기
+        </button>
+        <button class="menu-small-btn" onclick="openSuggestionModal()">
+          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          건의사항
         </button>
       </div>
     </div>
@@ -1258,11 +1354,20 @@ function switchAuthTab(m){
   document.getElementById('authId').placeholder=m==='login'?'아이디 또는 이메일':'아이디 (영문·숫자·_ 4~20자)';
   document.getElementById('authId').maxLength=254;
   document.getElementById('authPw').autocomplete=m==='login'?'current-password':'new-password';
-  document.getElementById('authEmail').style.display=m==='signup'?'block':'none';
-  document.getElementById('authPw2').style.display=m==='signup'?'block':'none';
-  document.getElementById('authNick').style.display=m==='signup'?'block':'none';
+  // 리디자인: field wrapper 토글
+  const emailField=document.getElementById('authEmailField');
+  const pw2Field=document.getElementById('authPw2Field');
+  const nickField=document.getElementById('authNickField');
+  if(emailField)emailField.style.display=m==='signup'?'flex':'none';
+  if(pw2Field)pw2Field.style.display=m==='signup'?'flex':'none';
+  if(nickField)nickField.style.display=m==='signup'?'flex':'none';
+  // 구버전 호환 (직접 input이 있을 경우)
+  const e2=document.getElementById('authEmail'),p2=document.getElementById('authPw2'),n=document.getElementById('authNick');
+  if(e2&&!emailField)e2.style.display=m==='signup'?'block':'none';
+  if(p2&&!pw2Field)p2.style.display=m==='signup'?'block':'none';
+  if(n&&!nickField)n.style.display=m==='signup'?'block':'none';
   document.getElementById('authSubmitBtn').textContent=m==='login'?'로그인':'회원가입';
-  document.getElementById('authFindLink').style.display=m==='login'?'block':'none';
+  document.getElementById('authFindLink').style.display=m==='login'?'inline-block':'none';
   document.getElementById('authErr').textContent='';
   // 탭 전환 시 인증 모달/배너 초기화
   document.getElementById('emailVerifyModal').classList.remove('show');
@@ -2916,7 +3021,8 @@ function applyEffect(card){
       setStatus('제거!');endGoPlace();
     }],
     exile:['stone',1,(cs)=>{exiledCells[cs[0][0]+','+cs[0][1]]={turns:4};setStatus('왕따! (2턴=4차례 지속)');endGoPlace();}],
-    cell_clear:['any',1,(cs)=>{const k=cs[0][0]+','+cs[0][1];delete banCells[k];delete prophetCells[k];delete traps[k];delete dangerMarks[k];setStatus('칸 방어!');endGoPlace();}],
+    cell_clear:['any',1,(cs)=>{const k=cs[0][0]+','+cs[0][1];const[cr,cc]=cs[0];delete banCells[k];delete prophetCells[k];delete traps[k];delete dangerMarks[k];delete exiledCells[k];// [버그수정] 해당 칸에 있는 폭탄도 제거
+bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace();}],
     bomb_s:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:2,owner:p,turns:2});setStatus('소형 폭탄!');endGoPlace();}],
     bomb_l:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:3,owner:p,turns:2});setStatus('대형 폭탄!');endGoPlace();}],
     // 분열(가로): 선택 돌 제거 후 좌우에 내 돌 배치. 상대 돌이 있는 방향은 건너뜀.
@@ -2926,6 +3032,8 @@ function applyEffect(card){
       board[r][c]=0;delete fortified[r+','+c];
       if(c-1>=0&&board[r][c-1]!==opp)board[r][c-1]=p;
       if(c+1<BS&&board[r][c+1]!==opp)board[r][c+1]=p;
+      // [버그수정] 분열 후 승리 체크
+      if((c-1>=0&&board[r][c-1]===p&&checkWin(r,c-1,p))||(c+1<BS&&board[r][c+1]===p&&checkWin(r,c+1,p))){showWin(p);return;}
       setStatus('분열(가로)!');endGoPlace();
     }],
     // 분열(세로): 선택 돌 제거 후 위아래에 내 돌 배치.
@@ -2935,6 +3043,8 @@ function applyEffect(card){
       board[r][c]=0;delete fortified[r+','+c];
       if(r-1>=0&&board[r-1][c]!==opp)board[r-1][c]=p;
       if(r+1<BS&&board[r+1][c]!==opp)board[r+1][c]=p;
+      // [버그수정] 분열 후 승리 체크
+      if((r-1>=0&&board[r-1][c]===p&&checkWin(r-1,c,p))||(r+1<BS&&board[r+1][c]===p&&checkWin(r+1,c,p))){showWin(p);return;}
       setStatus('분열(세로)!');endGoPlace();
     }],
     sanctuary:['any',1,(cs)=>{const[r,c]=cs[0];sanctuaryZones.push({r:Math.min(r,BS-2),c:Math.min(c,BS-2),turns:6});setStatus('보호구역!');endGoPlace();}],
@@ -2942,7 +3052,7 @@ function applyEffect(card){
     self_destruct:['own',1,(cs)=>{
       const[r,c]=cs[0];
       showStoneRemoveEffect(r,c,p); // 자폭하는 내 돌 이펙트
-      board[r][c]=0;delete fortified[r+','+c];
+      board[r][c]=0;delete fortified[r+','+c];delete exiledCells[r+','+c];
       for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
         if(dr===0&&dc===0)continue;
         const nr=r+dr,nc=c+dc;
@@ -2954,6 +3064,8 @@ function applyEffect(card){
             setTimeout(()=>showStoneRemoveEffect(nr,nc,victim),delay);
           }
           board[nr][nc]=0;
+          // [버그수정] 제거된 칸의 exile 효과도 정리
+          delete exiledCells[nr+','+nc];
         }
       }
       setStatus('자폭!');endGoPlace();
@@ -2972,6 +3084,8 @@ function applyEffect(card){
             setTimeout(()=>showStoneRemoveEffect(nr,nc,victim),delay);
           }
           board[nr][nc]=0;
+          // [버그수정] 공허로 제거된 칸의 exile 효과도 정리
+          delete exiledCells[nr+','+nc];
         }
       }
       setStatus('공허!');endGoPlace();
@@ -2994,6 +3108,8 @@ function applyEffect(card){
         const victim=board[rr][rc];
         setTimeout(()=>showStoneRemoveEffect(rr,rc,victim),i*55);
         board[rr][rc]=0;delete fortified[rr+','+rc];
+        // [버그수정] 제거된 칸에 걸린 exile/prophet 효과도 정리
+        delete exiledCells[rr+','+rc];delete prophetCells[rr+','+rc];
       });
       setStatus(`연쇄 체인! ${rem.length}개 제거.`);endGoPlace();
     }],
@@ -3026,7 +3142,8 @@ function applyEffect(card){
     drawBoard();
   };
   pickFirst();return;}
-  if(eff==='area_swap'){let f2=null;startClick('any',1,(cs)=>{const[r,c]=cs[0];f2=[Math.min(r,BS-2),Math.min(c,BS-2)];showSkillConfirmBtn(false);clickState={mode:'any',max:1,collected:[],callback:(cs2)=>{const[r3,c3]=cs2[0];const[nr2,nc2]=[Math.min(r3,BS-2),Math.min(c3,BS-2)];const[r1a,c1a]=f2;for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const k1=(r1a+dr)+','+(c1a+dc),k2=(nr2+dr)+','+(nc2+dc);const tmp=board[r1a+dr][c1a+dc];board[r1a+dr][c1a+dc]=board[nr2+dr][nc2+dc];board[nr2+dr][nc2+dc]=tmp;const ft1=fortified[k1],ft2=fortified[k2];if(ft2)fortified[k1]=ft2;else delete fortified[k1];if(ft1)fortified[k2]=ft1;else delete fortified[k2];}setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();});return;}
+  if(eff==='area_swap'){let f2=null;startClick('any',1,(cs)=>{const[r,c]=cs[0];f2=[Math.min(r,BS-2),Math.min(c,BS-2)];showSkillConfirmBtn(false);clickState={mode:'any',max:1,collected:[],callback:(cs2)=>{const[r3,c3]=cs2[0];const[nr2,nc2]=[Math.min(r3,BS-2),Math.min(c3,BS-2)];const[r1a,c1a]=f2;for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const k1=(r1a+dr)+','+(c1a+dc),k2=(nr2+dr)+','+(nc2+dc);const tmp=board[r1a+dr][c1a+dc];board[r1a+dr][c1a+dc]=board[nr2+dr][nc2+dc];board[nr2+dr][nc2+dc]=tmp;const ft1=fortified[k1],ft2=fortified[k2];if(ft2)fortified[k1]=ft2;else delete fortified[k1];if(ft1)fortified[k2]=ft1;else delete fortified[k2];}// [버그수정] area_swap 후 승리 체크
+let won=false;for(let dr=0;dr<2&&!won;dr++)for(let dc=0;dc<2&&!won;dc++){const rr1=r1a+dr,cc1=c1a+dc,rr2=nr2+dr,cc2=nc2+dc;if(board[rr1][cc1]&&checkWin(rr1,cc1,board[rr1][cc1])){showWin(board[rr1][cc1]);won=true;}else if(!won&&board[rr2][cc2]&&checkWin(rr2,cc2,board[rr2][cc2])){showWin(board[rr2][cc2]);won=true;}}if(won)return;setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();});return;}
   endGoPlace();
 }
 function showSkillConfirmBtn(show){
@@ -3379,6 +3496,8 @@ function endTurn(){
           setTimeout(()=>showStoneRemoveEffect(nr,nc,victim),delay);
         }
         board[nr][nc]=0;
+        // [버그수정] 폭탄으로 제거된 칸의 exile 효과도 정리
+        delete exiledCells[nr+','+nc];
       }
     });
     setStatus('폭탄 폭발!');
@@ -3992,7 +4111,8 @@ function cInitBoardEvents(){
   cv.onmouseleave=()=>{cHoverCell=null;cDrawBoard();};
   cv.onclick=cv.ontouchend=e=>{
     e.preventDefault();
-    if(!cIsMyClassicTurn()||cWinnerDetermined)return;
+    // [버그수정] AI가 생각 중일 때는 클릭 차단
+    if(cAiThinking||!cIsMyClassicTurn()||cWinnerDetermined)return;
     const{r,c}=cGetCell(e);
     if(r<0||r>=C_BS||c<0||c>=C_BS)return;
     if(cBoard[r][c]!==0)return;
@@ -4012,6 +4132,8 @@ function cInitBoardEvents(){
   };
 }
 function cConfirmPlace(){
+  // [버그수정] AI 생각 중이거나 내 차례 아닐 때 착수 차단
+  if(cAiThinking||cWinnerDetermined||!cIsMyClassicTurn())return;
   if(!cSelectedCell)return;
   const{r,c}=cSelectedCell;
   cSelectedCell=null;
@@ -4174,21 +4296,17 @@ function cAiSortCands(bd,cands,p){
 function cMinimax(bd,depth,alpha,beta,isMax,aiP){
   const p=isMax?aiP:(aiP===1?2:1);
   const cands=cAiCandidates(bd);
-  // 즉시 승리/패 체크
-  for(const[r,c]of cands){
-    bd[r][c]=p;
-    const win=cAiCheckWin(bd,r,c,p);
-    bd[r][c]=0;
-    if(win) return isMax?1e8+depth:-1e8-depth;
-  }
   if(depth===0) return cAiEval(bd,aiP);
   const sorted=depth>=2?cAiSortCands(bd,cands,p):cands;
-  const limit=depth>=6?8:depth>=4?12:20; // 깊을수록 후보 제한
+  // [버그수정] depth>=6 limit을 8→15로 확대: 전문가 모드에서 위협 후보를 너무 좁게 잘라내던 문제 해결
+  const limit=depth>=6?15:depth>=4?15:20;
   const top=sorted.slice(0,limit);
   if(isMax){
     let best=-Infinity;
     for(const[r,c]of top){
       bd[r][c]=p;
+      // [버그수정] 승리 체크를 루프 안에서 실제 착수 후 즉시 수행 (이전엔 별도 루프로 체크 후 착수 없이 리턴해서 해당 수가 탐색에서 누락됨)
+      if(cAiCheckWin(bd,r,c,p)){bd[r][c]=0;return 1e8+depth;}
       const v=cMinimax(bd,depth-1,alpha,beta,false,aiP);
       bd[r][c]=0;
       best=Math.max(best,v);alpha=Math.max(alpha,best);
@@ -4199,6 +4317,8 @@ function cMinimax(bd,depth,alpha,beta,isMax,aiP){
     let best=Infinity;
     for(const[r,c]of top){
       bd[r][c]=p;
+      // [버그수정] min 노드에서도 동일하게 즉시 패배 체크
+      if(cAiCheckWin(bd,r,c,p)){bd[r][c]=0;return -1e8-depth;}
       const v=cMinimax(bd,depth-1,alpha,beta,true,aiP);
       bd[r][c]=0;
       best=Math.min(best,v);beta=Math.min(beta,best);
@@ -4217,7 +4337,8 @@ function cAiBestMove(bd,aiP,depth){
   // 상대 즉시 승리 막기
   for(const[r,c]of cands){bd[r][c]=opp;if(cAiCheckWin(bd,r,c,opp)){bd[r][c]=0;return[r,c];}bd[r][c]=0;}
   const sorted=cAiSortCands(bd,cands,aiP);
-  const limit=depth>=6?10:15;
+  // [버그수정] 전문가(depth=8)에서도 충분한 후보 탐색하도록 limit 통일
+  const limit=20;
   const top=sorted.slice(0,limit);
   let bestScore=-Infinity, bestMove=top[0];
   for(const[r,c]of top){
@@ -4550,6 +4671,46 @@ function stopChat(){
 }
 
 // ── Auto-init Firebase on load ────────────────────────
+// ── 문의하기 / 건의사항 ────────────────────────────────
+function openContactModal(){
+  document.getElementById('contactModal').classList.add('show');
+  document.getElementById('contactErr').textContent='';
+  document.getElementById('contactSendBtn').disabled=false;
+  document.getElementById('contactSendBtn').textContent='이메일로 보내기';
+  // 글자수 카운터
+  const body=document.getElementById('contactBody');
+  if(body){
+    body.value='';
+    document.getElementById('contactBodyCount').textContent='0';
+    body.oninput=()=>{document.getElementById('contactBodyCount').textContent=body.value.length;};
+  }
+  // 로그인 상태면 이메일 자동 입력
+  const emailInput=document.getElementById('contactEmail');
+  if(emailInput&&currentUser&&currentUser.email)emailInput.value=currentUser.email;
+}
+function openSuggestionModal(){
+  document.getElementById('suggestionModal').classList.add('show');
+}
+function sendContactEmail(){
+  const email=document.getElementById('contactEmail').value.trim();
+  const type=document.getElementById('contactType').value;
+  const body=document.getElementById('contactBody').value.trim();
+  const errEl=document.getElementById('contactErr');
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){errEl.textContent='올바른 이메일 주소를 입력해주세요.';return;}
+  if(!body||body.length<10){errEl.textContent='내용을 10자 이상 입력해주세요.';return;}
+  errEl.textContent='';
+  const typeLabels={bug:'버그/오류 신고',account:'계정 관련',game:'게임 관련',etc:'기타'};
+  const subject=encodeURIComponent('[전략적 오목 문의] '+typeLabels[type]);
+  const mailBody=encodeURIComponent('문의 유형: '+typeLabels[type]+'\n회신 이메일: '+email+'\n\n'+body+'\n\n---\n전략적 오목 문의 폼');
+  const btn=document.getElementById('contactSendBtn');
+  btn.disabled=true;btn.textContent='이메일 앱 열기...';
+  window.location.href='mailto:okayt10293@gmail.com?subject='+subject+'&body='+mailBody;
+  setTimeout(()=>{
+    btn.textContent='전송됨 — 창 닫기';
+    btn.onclick=()=>{closeModal('contactModal');btn.onclick=sendContactEmail;};
+  },1500);
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   drawMenuBoard();
   initFirebase();
