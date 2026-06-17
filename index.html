@@ -431,7 +431,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
 .win-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.70);z-index:700;display:none;align-items:center;justify-content:center;}
 .win-overlay.show{display:flex;animation:winOverlayIn 0.5s ease forwards;}
 .win-box{background:var(--ui-bg);border-radius:20px;padding:36px 28px;text-align:center;max-width:320px;width:90%;box-shadow:0 12px 56px rgba(0,0,0,0.40),0 0 0 1.5px var(--border);animation:winBoxIn 0.65s cubic-bezier(.34,1.56,.64,1) both;}
-.win-box h2{font-family:'Black Han Sans',sans-serif;font-size:32px;color:var(--accent);margin-bottom:8px;animation:winTitleShine 1.6s ease-in-out 0.3s infinite;}
+.win-box h2{font-family:'Black Han Sans',sans-serif;font-size:32px;color:var(--accent);margin-bottom:8px;}
 .win-box p{color:var(--text2);margin-bottom:18px;font-size:13px;}
 .win-box button{padding:12px 30px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;}
 .card-pick-list{display:flex;flex-direction:column;gap:5px;max-height:380px;overflow-y:auto;margin-bottom:12px;}
@@ -664,7 +664,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
         <div class="play-mode-title">로컬 2인 대전</div>
         <div class="play-mode-desc">같은 기기</div>
       </button>
-      <button class="play-mode-btn" onclick="closePlayModeModal();startClassicGame('online')">
+      <button class="play-mode-btn" onclick="closePlayModeModal();openClassicLobby()">
         <div class="play-mode-title">온라인 대전</div>
         <div class="play-mode-desc">다른 기기</div>
       </button>
@@ -742,27 +742,78 @@ canvas#boardCanvas{display:block;touch-action:none;}
     </div>
   </div>
 </div>
-<div id="page-classic-online" class="page" style="align-items:center;justify-content:center;background:var(--bg);">
-  <div class="online-wrap">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <button style="background:none;border:none;font-size:20px;color:var(--accent);cursor:pointer;" onclick="showPage('page-menu')">←</button>
-      <span style="font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--accent);">클래식 오목 온라인</span>
+<!-- 클래식 오목 공개 대기실 -->
+<div id="page-classic-online" class="page" style="align-items:center;background:var(--bg);">
+  <style>
+    .classic-lobby-wrap{width:100%;max-width:440px;display:flex;flex-direction:column;gap:0;}
+    .classic-lobby-header{padding:13px 16px;background:var(--ui-bg);border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+    .classic-lobby-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--ui-bg);}
+    .classic-lobby-tab{flex:1;padding:12px 6px;background:none;border:none;font-size:13.5px;font-weight:800;color:var(--text3);position:relative;cursor:pointer;transition:color .2s;}
+    .classic-lobby-tab.active{color:var(--accent);}
+    .classic-lobby-tab.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2.5px;background:var(--accent);border-radius:2px;}
+    .classic-lobby-body{padding:14px;}
+    .classic-room-list{display:flex;flex-direction:column;gap:8px;min-height:80px;}
+    .classic-room-item{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+    .classic-room-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .classic-room-info{flex:1;min-width:0;}
+    .classic-room-host{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .classic-room-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+    .classic-room-code-badge{font-size:11px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:2px 7px;font-family:monospace;font-weight:700;letter-spacing:2px;color:var(--text2);}
+    .classic-room-join-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;transition:opacity .15s;}
+    .classic-room-join-btn:active{opacity:.8;}
+    .classic-lobby-empty{text-align:center;padding:28px 0;color:var(--text3);font-size:13px;line-height:1.8;}
+    .classic-lobby-section{background:var(--ui-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 14px 12px;margin-bottom:12px;}
+    .classic-lobby-section-title{font-size:12px;font-weight:800;color:var(--accent2);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;}
+    .classic-my-room-display{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1.5px solid var(--accent);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;display:none;}
+    .classic-my-room-code{font-family:monospace;font-size:26px;font-weight:900;letter-spacing:6px;color:var(--accent);text-align:center;}
+    .classic-room-loading{display:flex;align-items:center;justify-content:center;gap:9px;padding:22px 0;color:var(--text3);font-size:13px;}
+  </style>
+  <div class="classic-lobby-wrap">
+    <!-- 헤더 -->
+    <div class="classic-lobby-header">
+      <button style="background:none;border:none;font-size:20px;color:var(--accent);cursor:pointer;" onclick="leaveClassicLobby()">←</button>
+      <span style="font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--accent);">클래식 오목 대기실</span>
+      <button onclick="loadClassicLobbyRooms()" style="margin-left:auto;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;">새로고침</button>
     </div>
-    <div class="online-section">
-      <div class="online-section-title">방 만들기</div>
-      <button class="menu-btn primary" onclick="createClassicOnlineRoom()">새 방 만들기</button>
-      <div id="classicRoomCodeDisplay" style="display:none;flex-direction:column;gap:7px;align-items:center;">
-        <div style="font-size:12px;color:var(--text3);">방 코드 — 상대방에게 전달하세요</div>
-        <div class="room-code-big" id="classicRoomCodeText"></div>
-        <div id="classicRoomWaitMsg" style="font-size:12px;color:var(--text3);">상대방 입장 대기 중...</div>
+    <!-- 탭 -->
+    <div class="classic-lobby-tabs">
+      <button class="classic-lobby-tab active" id="clTabWait" onclick="switchClassicLobbyTab('wait')">대기실</button>
+      <button class="classic-lobby-tab" id="clTabCode" onclick="switchClassicLobbyTab('code')">코드 입장</button>
+    </div>
+    <!-- 대기실 패널 -->
+    <div id="clPanelWait" class="classic-lobby-body">
+      <!-- 방 만들기 -->
+      <div class="classic-lobby-section">
+        <div class="classic-lobby-section-title">내 방 만들기</div>
+        <button class="menu-btn primary" id="clCreateRoomBtn" onclick="createClassicLobbyRoom()" style="padding:12px;">새 방 만들기 (흑돌)</button>
+        <div class="classic-my-room-display" id="clMyRoomDisplay">
+          <div style="font-size:12px;color:var(--text3);text-align:center;">방 코드 — 아래 코드를 공유하거나 대기실에서 입장 가능</div>
+          <div class="classic-my-room-code" id="clMyRoomCode"></div>
+          <div style="display:flex;align-items:center;gap:7px;justify-content:center;">
+            <div class="loading-spinner" style="width:16px;height:16px;border-width:2.5px;"></div>
+            <span style="font-size:12px;color:var(--text3);">상대방 입장 대기 중...</span>
+          </div>
+          <button onclick="cancelClassicLobbyRoom()" style="width:100%;padding:8px;background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">방 취소</button>
+        </div>
+      </div>
+      <!-- 방 목록 -->
+      <div class="classic-lobby-section">
+        <div class="classic-lobby-section-title">대기 중인 방</div>
+        <div class="classic-room-list" id="clRoomList">
+          <div class="classic-room-loading"><div class="loading-spinner"></div> 불러오는 중...</div>
+        </div>
       </div>
     </div>
-    <div class="online-section">
-      <div class="online-section-title">방 입장하기</div>
-      <input id="classicRoomCodeInput" type="text" maxlength="6" placeholder="방 코드 6자리"
-        style="padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;">
-      <button class="menu-btn primary" onclick="joinClassicOnlineRoom()">입장하기</button>
-      <div id="classicJoinMsg" style="font-size:12px;color:var(--red);text-align:center;display:none;"></div>
+    <!-- 코드 입장 패널 -->
+    <div id="clPanelCode" class="classic-lobby-body" style="display:none;">
+      <div class="classic-lobby-section">
+        <div class="classic-lobby-section-title">방 코드로 입장</div>
+        <input id="classicRoomCodeInput" type="text" maxlength="7" placeholder="방 코드 입력 (6~7자리)"
+          style="padding:12px;border:1.5px solid var(--border2);border-radius:9px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;margin-bottom:10px;"
+          onkeydown="if(event.key==='Enter')joinClassicOnlineRoom()">
+        <button class="menu-btn primary" onclick="joinClassicOnlineRoom()" style="padding:12px;">입장하기</button>
+        <div id="classicJoinMsg" style="font-size:12px;color:var(--red);text-align:center;display:none;margin-top:6px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2723,6 +2774,136 @@ function drawBoard(){
   if(pendingSelected){const{r,c}=pendingSelected;const x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE,R=H-2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=currentPlayer===1?'rgba(0,0,0,0.33)':'rgba(255,255,255,0.52)';ctx.fill();ctx.strokeStyle=currentPlayer===1?'#333':'#ddd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R+2,0,Math.PI*2);ctx.stroke();}
   if(clickState&&clickState.mode){
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(isValidTarget(r,c)){ctx.fillStyle='rgba(184,134,11,0.17)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}}
+    // ── 스킬 범위 호버 미리보기 ──
+    if(hoverCell&&clickState.collected.length===0){
+      const{r:hr,c:hc}=hoverCell;
+      const eff=clickState._skillEff||'';
+      // 자폭 (3×3 주변 제거 범위)
+      if(eff==='self_destruct'&&board[hr][hc]===currentPlayer){
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          if(dr===0&&dc===0)continue;
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N){
+            ctx.fillStyle='rgba(198,40,40,0.20)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle='rgba(198,40,40,0.55)';ctx.lineWidth=1.2;ctx.setLineDash([3,3]);
+            ctx.strokeRect(OFF+nc*CELL_SIZE-H+1,OFF+nr*CELL_SIZE-H+1,CELL_SIZE-2,CELL_SIZE-2);ctx.setLineDash([]);
+          }
+        }
+        // 자폭 중심 테두리
+        ctx.strokeStyle='rgba(198,40,40,0.9)';ctx.lineWidth=2;
+        ctx.strokeRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+      }
+      // 보호구역 (2×2)
+      if((eff==='sanctuary'||eff==='area_swap')&&hr>=0&&hc>=0){
+        const tr=Math.min(hr,N-2),tc=Math.min(hc,N-2);
+        ctx.fillStyle='rgba(46,125,50,0.15)';ctx.fillRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);
+        ctx.strokeStyle='rgba(46,125,50,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);ctx.setLineDash([]);
+        // 내부 칸 하이라이트
+        for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){
+          ctx.fillStyle='rgba(46,125,50,0.08)';ctx.fillRect(OFF+(tc+dc)*CELL_SIZE-H+2,OFF+(tr+dr)*CELL_SIZE-H+2,CELL_SIZE-4,CELL_SIZE-4);
+        }
+      }
+      // 공허 (3×3 전체 제거)
+      if(eff==='void_zone'){
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N){
+            ctx.fillStyle=dr===0&&dc===0?'rgba(198,40,40,0.22)':'rgba(198,40,40,0.14)';
+            ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          }
+        }
+        ctx.strokeStyle='rgba(198,40,40,0.65)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+(hc-1)*CELL_SIZE-H,OFF+(hr-1)*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);ctx.setLineDash([]);
+      }
+      // 보호명령 (3×3 내 내 돌 굳힘)
+      if(eff==='protect_order'){
+        const tr=Math.min(hr,N-3),tc=Math.min(hc,N-3);
+        ctx.fillStyle='rgba(245,167,23,0.10)';ctx.fillRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);
+        ctx.strokeStyle='rgba(245,167,23,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);ctx.setLineDash([]);
+        // 해당 영역 내 내 돌 강조
+        for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){
+          const nr=tr+dr,nc=tc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===currentPlayer){
+            ctx.strokeStyle='rgba(245,167,23,0.9)';ctx.lineWidth=2;
+            ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+nr*CELL_SIZE,H-1,0,Math.PI*2);ctx.stroke();
+          }
+        }
+      }
+      // 분열(가로) — 선택 돌 기준 좌우 범위
+      if(eff==='split_h'&&board[hr][hc]===currentPlayer){
+        [-1,1].forEach(dc=>{
+          const nc=hc+dc;
+          if(nc>=0&&nc<N){
+            const isOpp=board[hr][nc]===getOpp(currentPlayer);
+            ctx.fillStyle=isOpp?'rgba(198,40,40,0.18)':'rgba(30,136,229,0.22)';
+            ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle=isOpp?'rgba(198,40,40,0.6)':'rgba(30,136,229,0.7)';ctx.lineWidth=1.5;
+            ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+hr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+          }
+        });
+      }
+      // 분열(세로) — 선택 돌 기준 위아래 범위
+      if(eff==='split_v'&&board[hr][hc]===currentPlayer){
+        [-1,1].forEach(dr=>{
+          const nr=hr+dr;
+          if(nr>=0&&nr<N){
+            const isOpp=board[nr][hc]===getOpp(currentPlayer);
+            ctx.fillStyle=isOpp?'rgba(198,40,40,0.18)':'rgba(30,136,229,0.22)';
+            ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle=isOpp?'rgba(198,40,40,0.6)':'rgba(30,136,229,0.7)';ctx.lineWidth=1.5;
+            ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+nr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+          }
+        });
+      }
+      // 연쇄 체인 — 호버 돌에서 BFS 연결 경로 미리보기
+      if(eff==='chain'&&board[hr][hc]!==0){
+        const q=[[hr,hc]],vis=new Set([hr+','+hc]),chain=[[hr,hc]];
+        while(q.length){
+          const[cr,cc]=q.shift();
+          [[0,1],[0,-1],[1,0],[-1,0]].forEach(([ddr,ddc])=>{
+            const nr=cr+ddr,nc=cc+ddc,k=nr+','+nc;
+            if(nr>=0&&nr<N&&nc>=0&&nc<N&&!vis.has(k)&&board[nr][nc]!==0&&!isFort(nr,nc)){
+              vis.add(k);chain.push([nr,nc]);q.push([nr,nc]);
+            }
+          });
+        }
+        chain.forEach(([rr,rc])=>{
+          ctx.fillStyle='rgba(198,40,40,0.20)';ctx.fillRect(OFF+rc*CELL_SIZE-H,OFF+rr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          ctx.strokeStyle='rgba(198,40,40,0.65)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(OFF+rc*CELL_SIZE,OFF+rr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        });
+      }
+      // 착수 금지 / 함정 / 지뢰 / 예언자 — 단일 칸 강조
+      if((eff==='ban_place'||eff==='trap'||eff==='extra_place'||eff==='prophet')&&board[hr][hc]===0){
+        const clr=eff==='ban_place'?'rgba(198,40,40,0.25)':eff==='trap'?'rgba(230,81,0,0.25)':eff==='extra_place'?'rgba(30,136,229,0.25)':'rgba(46,125,50,0.25)';
+        ctx.fillStyle=clr;ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+      }
+      // 위험 예고 / 공사 예고 / 왕따 / 굳히기 / 제거 / 칸 방어 — 단일 돌 강조
+      if((eff==='danger_mark'||eff==='construction'||eff==='exile'||eff==='fortify'||eff==='remove'||eff==='cell_clear')&&board[hr][hc]!==0){
+        const clr=eff==='fortify'?'rgba(245,167,23,0.3)':eff==='exile'?'rgba(100,100,100,0.25)':eff==='remove'?'rgba(198,40,40,0.3)':'rgba(184,134,11,0.25)';
+        ctx.fillStyle=clr;ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+        ctx.strokeStyle='rgba(184,134,11,0.7)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+hr*CELL_SIZE,H,0,Math.PI*2);ctx.stroke();
+      }
+      // 돌 이동 — 이미 1단계 이후 moveRange가 있을 때만 (첫 클릭 전에는 내 돌 하이라이트)
+      if(eff==='move_stone'&&board[hr][hc]===currentPlayer&&!clickState.moveRange){
+        const adjEmpty=[];
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          if(dr===0&&dc===0)continue;
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===0)adjEmpty.push([nr,nc]);
+        }
+        adjEmpty.forEach(([nr,nc])=>{
+          ctx.fillStyle='rgba(30,136,229,0.22)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          ctx.strokeStyle='rgba(30,136,229,0.7)';ctx.lineWidth=1.3;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+nr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        });
+        ctx.strokeStyle='rgba(255,140,0,0.85)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+hr*CELL_SIZE,H,0,Math.PI*2);ctx.stroke();
+      }
+    }
     clickState.collected.forEach(([r,c])=>{ctx.strokeStyle='#b8860b';ctx.lineWidth=2;ctx.strokeRect(OFF+c*CELL_SIZE-H+1,OFF+r*CELL_SIZE-H+1,CELL_SIZE-2,CELL_SIZE-2);});
     if(clickState.moveRange){
       const[fr,fc]=clickState.moveFrom;
@@ -2778,12 +2959,17 @@ function initBoardEvents(){
 }
 function bpos(e,cv){const rect=cv.getBoundingClientRect(),sx=cv.width/rect.width,sy=cv.height/rect.height;return{r:Math.round(((e.clientY-rect.top)*sy-CELL_SIZE/2)/CELL_SIZE),c:Math.round(((e.clientX-rect.left)*sx-CELL_SIZE/2)/CELL_SIZE)};}
 function boardClick(r,c){
+  if(_clickBlocked)return;
   if(clickState&&clickState.mode){
-    if(!isValidTarget(r,c)){setStatus('유효하지 않은 칸입니다!');return;}
-    if(clickState.collected.some(([pr,pc])=>pr===r&&pc===c))return;
+    // 이미 선택 완료(발동 버튼 표시 중)이면 보드 재클릭으로 교체 불가
     if(clickState.collected.length>=clickState.max){
-      clickState.collected.shift(); // 가장 먼저 고른 것 제거
+      setStatus('위치 선택 완료! [스킬 발동] 버튼을 눌러 스킬을 사용하세요.');
+      return;
     }
+    if(!isValidTarget(r,c)){setStatus('유효하지 않은 칸입니다!');return;}
+    // 이미 선택한 칸 재클릭 → 선택 취소
+    const alreadyIdx=clickState.collected.findIndex(([pr,pc])=>pr===r&&pc===c);
+    if(alreadyIdx!==-1){clickState.collected.splice(alreadyIdx,1);drawBoard();setStatus(`${clickState.max-clickState.collected.length}개 더 선택하세요.`);return;}
     clickState.collected.push([r,c]);drawBoard();
     if(clickState.collected.length>=clickState.max){
       setStatus('위치 선택 완료! [스킬 발동] 버튼을 눌러 스킬을 사용하세요.');
@@ -3169,9 +3355,9 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       setStatus(`연쇄 체인! ${rem.length}개 제거.`);endGoPlace();
     }],
   };
-  if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===p)fortified[nr+','+nc]=4;}setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();});return;}
+  if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===p)fortified[nr+','+nc]=4;}setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();},'protect_order');return;}
   if(eff==='blind'){blindTurns=4;setStatus('블라인드 발동! 2턴 동안 상대에게 카드 정보가 숨겨집니다.');endGoPlace();return;}
-  if(CE[eff]){const[mode,max,cb]=CE[eff];startClick(mode,max,cb);
+  if(CE[eff]){const[mode,max,cb]=CE[eff];startClick(mode,max,cb,eff);
     if(eff==='bomb_s')clickState.bombSize=2;
     if(eff==='bomb_l')clickState.bombSize=3;
     return;
@@ -3185,17 +3371,17 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===0)adjEmpty.push([nr,nc]);
     }
     if(adjEmpty.length===0){setStatus('이동 가능한 인접 빈 칸이 없습니다!');endGoPlace();return;}
-    clickState={mode:'empty',max:1,collected:[],moveRange:adjEmpty,moveFrom:[r,c],callback:(cs2)=>{
+    clickState={mode:'empty',max:1,collected:[],moveRange:adjEmpty,moveFrom:[r,c],_skillEff:'move_stone',callback:(cs2)=>{
       const[nr,nc]=cs2[0];
       board[nr][nc]=board[r][c];board[r][c]=0;
       if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}
       setStatus('돌 이동!');endGoPlace();
     }};
     setStatus('파란 칸을 클릭해 이동할 위치를 선택하세요.');drawBoard();
-  });return;}
+  },'move_stone');return;}
   if(eff==='unstable_two'){
   let first=null;
-  const pickFirst=()=>{startClick('empty',1,(cs)=>{first=cs[0];pickSecond();});};
+  const pickFirst=()=>{startClick('empty',1,(cs)=>{first=cs[0];pickSecond();},'unstable_two');};
   const pickSecond=()=>{
     setStatus('두 번째 위치를 클릭하세요. (같은 선상 불가)');
     showSkillConfirmBtn(false);
@@ -3213,8 +3399,8 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
     drawBoard();
   };
   pickFirst();return;}
-  if(eff==='area_swap'){let f2=null;startClick('any',1,(cs)=>{const[r,c]=cs[0];f2=[Math.min(r,BS-2),Math.min(c,BS-2)];showSkillConfirmBtn(false);clickState={mode:'any',max:1,collected:[],callback:(cs2)=>{const[r3,c3]=cs2[0];const[nr2,nc2]=[Math.min(r3,BS-2),Math.min(c3,BS-2)];const[r1a,c1a]=f2;for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const k1=(r1a+dr)+','+(c1a+dc),k2=(nr2+dr)+','+(nc2+dc);const tmp=board[r1a+dr][c1a+dc];board[r1a+dr][c1a+dc]=board[nr2+dr][nc2+dc];board[nr2+dr][nc2+dc]=tmp;const ft1=fortified[k1],ft2=fortified[k2];if(ft2)fortified[k1]=ft2;else delete fortified[k1];if(ft1)fortified[k2]=ft1;else delete fortified[k2];}// [버그수정] area_swap 후 승리 체크
-let won=false;for(let dr=0;dr<2&&!won;dr++)for(let dc=0;dc<2&&!won;dc++){const rr1=r1a+dr,cc1=c1a+dc,rr2=nr2+dr,cc2=nc2+dc;if(board[rr1][cc1]&&checkWin(rr1,cc1,board[rr1][cc1])){showWin(board[rr1][cc1]);won=true;}else if(!won&&board[rr2][cc2]&&checkWin(rr2,cc2,board[rr2][cc2])){showWin(board[rr2][cc2]);won=true;}}if(won)return;setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();});return;}
+  if(eff==='area_swap'){let f2=null;startClick('any',1,(cs)=>{const[r,c]=cs[0];f2=[Math.min(r,BS-2),Math.min(c,BS-2)];showSkillConfirmBtn(false);clickState={mode:'any',max:1,collected:[],_skillEff:'area_swap',callback:(cs2)=>{const[r3,c3]=cs2[0];const[nr2,nc2]=[Math.min(r3,BS-2),Math.min(c3,BS-2)];const[r1a,c1a]=f2;for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const k1=(r1a+dr)+','+(c1a+dc),k2=(nr2+dr)+','+(nc2+dc);const tmp=board[r1a+dr][c1a+dc];board[r1a+dr][c1a+dc]=board[nr2+dr][nc2+dc];board[nr2+dr][nc2+dc]=tmp;const ft1=fortified[k1],ft2=fortified[k2];if(ft2)fortified[k1]=ft2;else delete fortified[k1];if(ft1)fortified[k2]=ft1;else delete fortified[k2];}// [버그수정] area_swap 후 승리 체크
+let won=false;for(let dr=0;dr<2&&!won;dr++)for(let dc=0;dc<2&&!won;dc++){const rr1=r1a+dr,cc1=c1a+dc,rr2=nr2+dr,cc2=nc2+dc;if(board[rr1][cc1]&&checkWin(rr1,cc1,board[rr1][cc1])){showWin(board[rr1][cc1]);won=true;}else if(!won&&board[rr2][cc2]&&checkWin(rr2,cc2,board[rr2][cc2])){showWin(board[rr2][cc2]);won=true;}}if(won)return;setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();},'area_swap');return;}
   endGoPlace();
 }
 function showSkillConfirmBtn(show){
@@ -3250,7 +3436,9 @@ function cancelSkill(){
   renderAll();
 }
 function endGoPlace(){phase='place';selectedCardIdx=null;pendingSelected=null;showSkillConfirmBtn(false);showPlaceBtn(true);renderAll();setStatus('착수할 위치를 클릭 후 [착수 확정]을 누르세요. (카드 클릭 시 스킬 취소 후 재선택 가능)');}
-function startClick(mode,max,cb){clickState={mode,max,collected:[],callback:cb};showSkillConfirmBtn(false);const ml={empty:'빈 칸',own:'내 돌',opp:'상대 돌',stone:'돌',any:'칸'};setStatus(`${ml[mode]||mode} ${max}개를 클릭하세요.`);drawBoard();}
+let _clickBlocked=false;
+function startClick(mode,max,cb,skillEff){clickState={mode,max,collected:[],callback:cb,_skillEff:skillEff||''};showSkillConfirmBtn(false);const ml={empty:'빈 칸',own:'내 돌',opp:'상대 돌',stone:'돌',any:'칸'};setStatus(`${ml[mode]||mode} ${max}개를 클릭하세요.`);// 모달 닫힘 후 이벤트 전파로 즉시 발동 방지
+_clickBlocked=true;setTimeout(()=>{_clickBlocked=false;},320);drawBoard();}
 
 // ── 착수 확정 ─────────────────────────────────────────────────
 // confirmPlace: 착수 확정 버튼 클릭 → pendingSelected 위치에 착수
@@ -4766,43 +4954,173 @@ function joinClassicLocalRoom(){
     });
   }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
 }
-// ── 클래식 오목 온라인 ──
-function resetClassicOnlineUI(){
-  document.getElementById('classicRoomCodeDisplay').style.display='none';
-  document.getElementById('classicRoomCodeText').textContent='';
-  document.getElementById('classicRoomWaitMsg').textContent='상대방 입장 대기 중...';
-  document.getElementById('classicJoinMsg').style.display='none';
-  document.getElementById('classicRoomCodeInput').value='';
+// ── 클래식 오목 공개 대기실 로비 ──────────────────────────────
+let _clLobbyRoomId=null;
+let _clLobbyListener=null;
+
+function leaveClassicLobby(){
+  if(_clLobbyRoomId)cancelClassicLobbyRoom();
+  stopClassicLobbyListener();
+  showPage('page-menu');
 }
-function createClassicOnlineRoom(){
+
+function openClassicLobby(){
+  // 로비 상태 초기화
+  _clLobbyRoomId=null;cRoomId=null;cMyRole=null;
+  const disp=document.getElementById('clMyRoomDisplay');
+  if(disp)disp.style.display='none';
+  document.getElementById('clMyRoomCode').textContent='';
+  const btn=document.getElementById('clCreateRoomBtn');
+  if(btn)btn.disabled=false;
+  document.getElementById('classicRoomCodeInput').value='';
+  const msgEl=document.getElementById('classicJoinMsg');
+  if(msgEl)msgEl.style.display='none';
+  // 대기실 탭으로 초기화
+  switchClassicLobbyTab('wait');
+  showPage('page-classic-online');
+  startClassicLobbyListener();
+  loadClassicLobbyRooms();
+}
+
+function switchClassicLobbyTab(t){
+  document.getElementById('clTabWait').classList.toggle('active',t==='wait');
+  document.getElementById('clTabCode').classList.toggle('active',t==='code');
+  document.getElementById('clPanelWait').style.display=t==='wait'?'block':'none';
+  document.getElementById('clPanelCode').style.display=t==='code'?'block':'none';
+  if(t==='wait')loadClassicLobbyRooms();
+}
+
+function startClassicLobbyListener(){
+  if(!db)return;
+  stopClassicLobbyListener();
+  _clLobbyListener=db.ref('rooms').orderByChild('status').equalTo('waiting').on('value',()=>loadClassicLobbyRooms());
+}
+
+function stopClassicLobbyListener(){
+  if(_clLobbyListener&&db){
+    try{db.ref('rooms').off('value',_clLobbyListener);}catch(e){}
+    _clLobbyListener=null;
+  }
+}
+
+function loadClassicLobbyRooms(){
+  if(!db)return;
+  const listEl=document.getElementById('clRoomList');
+  if(!listEl)return;
+  listEl.innerHTML='<div class="classic-room-loading"><div class="loading-spinner"></div> 불러오는 중...</div>';
+  db.ref('rooms').orderByChild('status').equalTo('waiting').once('value').then(snap=>{
+    const rooms=[];
+    snap.forEach(c=>{
+      const v=c.val();
+      if(Date.now()-(v.createdAt||0)>30*60*1000)return;
+      if(c.key===_clLobbyRoomId)return;
+      if(!v.classic)return; // 클래식 방만 표시
+      if(v.local)return;    // 로컬 방 제외
+      rooms.push({id:c.key,...v});
+    });
+    if(!rooms.length){
+      listEl.innerHTML='<div class="classic-lobby-empty">대기 중인 방이 없습니다.<br>방을 만들어 상대를 기다려보세요!</div>';
+      return;
+    }
+    listEl.innerHTML='';
+    rooms.forEach(r=>{
+      const elapsed=Math.floor((Date.now()-(r.createdAt||Date.now()))/1000);
+      const timeStr=elapsed<60?`${elapsed}초 전`:`${Math.floor(elapsed/60)}분 전`;
+      const initChar=(r.blackNick||'?').charAt(0).toUpperCase();
+      const item=document.createElement('div');
+      item.className='classic-room-item';
+      item.innerHTML=`
+        <div class="classic-room-avatar">${initChar}</div>
+        <div class="classic-room-info">
+          <div class="classic-room-host">${escHtml(r.blackNick||'?')}</div>
+          <div class="classic-room-meta">${timeStr}</div>
+        </div>
+        <span class="classic-room-code-badge">${r.id}</span>
+        <button class="classic-room-join-btn" onclick="joinClassicLobbyRoom('${r.id}')">입장</button>
+      `;
+      listEl.appendChild(item);
+    });
+  }).catch(()=>{
+    if(listEl)listEl.innerHTML='<div class="classic-lobby-empty">목록을 불러오지 못했습니다.</div>';
+  });
+}
+
+function createClassicLobbyRoom(){
   if(!db){alert('Firebase 초기화 실패');return;}
-  const code='C'+genCode();cRoomId=code;cMyRole='black';
+  if(_clLobbyRoomId){alert('이미 방을 만들었습니다.');return;}
+  const code='C'+genCode();
+  _clLobbyRoomId=code;cRoomId=code;cMyRole='black';
   const myNick=currentUserData?currentUserData.nickname:'흑';
   const myUid=currentUser?currentUser.uid:null;
-  db.ref('rooms/'+code).set({status:'waiting',blackNick:myNick,blackUid:myUid,whiteNick:null,whiteUid:null,classic:true,createdAt:Date.now()}).then(()=>{
-    const disp=document.getElementById('classicRoomCodeDisplay');disp.style.display='flex';
-    document.getElementById('classicRoomCodeText').textContent=code;
+  const btn=document.getElementById('clCreateRoomBtn');
+  if(btn)btn.disabled=true;
+  db.ref('rooms/'+code).set({
+    status:'waiting',blackNick:myNick,blackUid:myUid,
+    whiteNick:null,whiteUid:null,classic:true,createdAt:Date.now()
+  }).then(()=>{
+    const disp=document.getElementById('clMyRoomDisplay');
+    if(disp){disp.style.display='flex';}
+    document.getElementById('clMyRoomCode').textContent=code;
+    loadClassicLobbyRooms();
     db.ref('rooms/'+code+'/whiteNick').on('value',snap=>{
-      if(snap.val()){
-        document.getElementById('classicRoomWaitMsg').textContent='상대방 입장! 게임 시작...';
-        db.ref('rooms/'+code+'/status').set('playing');
-        db.ref('rooms/'+code).once('value').then(s=>{
-          const r=s.val()||{};
-          setTimeout(()=>startClassicOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null),800);
-        });
-      }
+      if(!snap.val())return;
+      db.ref('rooms/'+code+'/status').set('playing');
+      db.ref('rooms/'+code).once('value').then(s=>{
+        const r=s.val()||{};
+        stopClassicLobbyListener();
+        setTimeout(()=>startClassicOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null),800);
+      });
     });
-  }).catch(e=>alert('방 생성 실패: '+e.message));
+  }).catch(e=>{
+    _clLobbyRoomId=null;
+    if(btn)btn.disabled=false;
+    alert('방 생성 실패: '+e.message);
+  });
 }
+
+function cancelClassicLobbyRoom(){
+  if(!_clLobbyRoomId||!db)return;
+  db.ref('rooms/'+_clLobbyRoomId).off();
+  db.ref('rooms/'+_clLobbyRoomId+'/status').set('cancelled').catch(()=>{});
+  db.ref('rooms/'+_clLobbyRoomId).remove().catch(()=>{});
+  _clLobbyRoomId=null;cRoomId=null;cMyRole=null;
+  const disp=document.getElementById('clMyRoomDisplay');
+  if(disp)disp.style.display='none';
+  document.getElementById('clMyRoomCode').textContent='';
+  const btn=document.getElementById('clCreateRoomBtn');
+  if(btn)btn.disabled=false;
+  loadClassicLobbyRooms();
+}
+
+function joinClassicLobbyRoom(code){
+  if(!db)return;
+  const myNick=currentUserData?currentUserData.nickname:'백';
+  const myUid=currentUser?currentUser.uid:null;
+  db.ref('rooms/'+code).once('value').then(snap=>{
+    const room=snap.val();
+    if(!room||room.status!=='waiting'){alert('이미 시작됐거나 없는 방입니다.');loadClassicLobbyRooms();return;}
+    cRoomId=code;cMyRole='white';
+    db.ref('rooms/'+code).update({whiteNick:myNick,whiteUid:myUid}).then(()=>{
+      stopClassicLobbyListener();
+      db.ref('rooms/'+code+'/status').on('value',s=>{
+        if(s.val()==='playing'){
+          setTimeout(()=>startClassicOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null),400);
+        }
+      });
+    });
+  }).catch(e=>alert('입장 실패: '+e.message));
+}
+
 function joinClassicOnlineRoom(){
   if(!db){alert('Firebase 초기화 실패');return;}
   const code=document.getElementById('classicRoomCodeInput').value.trim().toUpperCase();
   const msgEl=document.getElementById('classicJoinMsg');
-  if(code.length<7){msgEl.textContent='방 코드를 입력하세요.';msgEl.style.display='block';return;}
+  if(code.length<6){msgEl.textContent='방 코드를 입력하세요.';msgEl.style.display='block';return;}
+  msgEl.style.display='none';
   db.ref('rooms/'+code).once('value').then(snap=>{
     const room=snap.val();
-    if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
-    if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.display='block';return;}
+    if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.color='var(--red)';msgEl.style.display='block';return;}
+    if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.color='var(--red)';msgEl.style.display='block';return;}
     const myNick=currentUserData?currentUserData.nickname:'백';
     const myUid=currentUser?currentUser.uid:null;
     cRoomId=code;cMyRole='white';
@@ -4812,7 +5130,7 @@ function joinClassicOnlineRoom(){
         if(snap2.val()==='playing')setTimeout(()=>startClassicOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null),400);
       });
     });
-  }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
+  }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.color='var(--red)';msgEl.style.display='block';});
 }
 function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
   showPage('page-classic-game');
