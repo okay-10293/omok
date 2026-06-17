@@ -2772,6 +2772,154 @@ function drawBoard(){
   }
   if(phase==='place'&&hoverCell&&!pendingSelected){const{r,c}=hoverCell;if(board[r][c]===0&&!isCellBanned(r,c)){const x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE,R=H-2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=currentPlayer===1?'rgba(0,0,0,0.2)':'rgba(255,255,255,0.3)';ctx.fill();}}
   if(pendingSelected){const{r,c}=pendingSelected;const x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE,R=H-2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=currentPlayer===1?'rgba(0,0,0,0.33)':'rgba(255,255,255,0.52)';ctx.fill();ctx.strokeStyle=currentPlayer===1?'#333':'#ddd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R+2,0,Math.PI*2);ctx.stroke();}
+  // ── 카드 선택 중 (스킬 사용 전) 범위 미리보기 ──
+  if(!clickState&&selectedCardIdx!==null&&hoverCell&&(phase==='card'||phase==='place')){
+    const card=hands[currentKey()]&&hands[currentKey()][selectedCardIdx];
+    if(card&&!IMMEDIATE_EFFECTS.has(card.effect)){
+      const eff=card.effect;
+      const{r:hr,c:hc}=hoverCell;
+      // 자폭
+      if(eff==='self_destruct'&&board[hr][hc]===currentPlayer){
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          if(dr===0&&dc===0)continue;
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N){
+            ctx.fillStyle='rgba(198,40,40,0.20)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle='rgba(198,40,40,0.55)';ctx.lineWidth=1.2;ctx.setLineDash([3,3]);
+            ctx.strokeRect(OFF+nc*CELL_SIZE-H+1,OFF+nr*CELL_SIZE-H+1,CELL_SIZE-2,CELL_SIZE-2);ctx.setLineDash([]);
+          }
+        }
+        ctx.strokeStyle='rgba(198,40,40,0.9)';ctx.lineWidth=2;
+        ctx.strokeRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+      }
+      // 보호구역 / 영역전환
+      if((eff==='sanctuary'||eff==='area_swap')&&hr>=0&&hc>=0){
+        const tr=Math.min(hr,N-2),tc=Math.min(hc,N-2);
+        ctx.fillStyle='rgba(46,125,50,0.15)';ctx.fillRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);
+        ctx.strokeStyle='rgba(46,125,50,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);ctx.setLineDash([]);
+        for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){
+          ctx.fillStyle='rgba(46,125,50,0.08)';ctx.fillRect(OFF+(tc+dc)*CELL_SIZE-H+2,OFF+(tr+dr)*CELL_SIZE-H+2,CELL_SIZE-4,CELL_SIZE-4);
+        }
+      }
+      // 공허
+      if(eff==='void_zone'){
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N){
+            ctx.fillStyle=dr===0&&dc===0?'rgba(198,40,40,0.22)':'rgba(198,40,40,0.14)';
+            ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          }
+        }
+        ctx.strokeStyle='rgba(198,40,40,0.65)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+(hc-1)*CELL_SIZE-H,OFF+(hr-1)*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);ctx.setLineDash([]);
+      }
+      // 보호명령
+      if(eff==='protect_order'){
+        const tr=Math.min(hr,N-3),tc=Math.min(hc,N-3);
+        ctx.fillStyle='rgba(245,167,23,0.10)';ctx.fillRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);
+        ctx.strokeStyle='rgba(245,167,23,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+        ctx.strokeRect(OFF+tc*CELL_SIZE-H,OFF+tr*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);ctx.setLineDash([]);
+        for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){
+          const nr=tr+dr,nc=tc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===currentPlayer){
+            ctx.strokeStyle='rgba(245,167,23,0.9)';ctx.lineWidth=2;
+            ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+nr*CELL_SIZE,H-1,0,Math.PI*2);ctx.stroke();
+          }
+        }
+      }
+      // 분열(가로)
+      if(eff==='split_h'&&board[hr][hc]===currentPlayer){
+        [-1,1].forEach(dc=>{
+          const nc=hc+dc;
+          if(nc>=0&&nc<N){
+            const isOpp=board[hr][nc]===getOpp(currentPlayer);
+            ctx.fillStyle=isOpp?'rgba(198,40,40,0.18)':'rgba(30,136,229,0.22)';
+            ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle=isOpp?'rgba(198,40,40,0.6)':'rgba(30,136,229,0.7)';ctx.lineWidth=1.5;
+            ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+hr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+          }
+        });
+      }
+      // 분열(세로)
+      if(eff==='split_v'&&board[hr][hc]===currentPlayer){
+        [-1,1].forEach(dr=>{
+          const nr=hr+dr;
+          if(nr>=0&&nr<N){
+            const isOpp=board[nr][hc]===getOpp(currentPlayer);
+            ctx.fillStyle=isOpp?'rgba(198,40,40,0.18)':'rgba(30,136,229,0.22)';
+            ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+            ctx.strokeStyle=isOpp?'rgba(198,40,40,0.6)':'rgba(30,136,229,0.7)';ctx.lineWidth=1.5;
+            ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+nr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+          }
+        });
+      }
+      // 연쇄 체인
+      if(eff==='chain'&&board[hr][hc]!==0){
+        const q=[[hr,hc]],vis=new Set([hr+','+hc]),chain=[[hr,hc]];
+        while(q.length){
+          const[cr,cc]=q.shift();
+          [[0,1],[0,-1],[1,0],[-1,0]].forEach(([ddr,ddc])=>{
+            const nr=cr+ddr,nc=cc+ddc,k=nr+','+nc;
+            if(nr>=0&&nr<N&&nc>=0&&nc<N&&!vis.has(k)&&board[nr][nc]!==0&&!isFort(nr,nc)){
+              vis.add(k);chain.push([nr,nc]);q.push([nr,nc]);
+            }
+          });
+        }
+        chain.forEach(([rr,rc])=>{
+          ctx.fillStyle='rgba(198,40,40,0.20)';ctx.fillRect(OFF+rc*CELL_SIZE-H,OFF+rr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          ctx.strokeStyle='rgba(198,40,40,0.65)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(OFF+rc*CELL_SIZE,OFF+rr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        });
+      }
+      // 착수 금지 / 함정 / 추가 배치 / 예언자
+      if((eff==='ban_place'||eff==='trap'||eff==='extra_place'||eff==='prophet')&&board[hr][hc]===0){
+        const clr=eff==='ban_place'?'rgba(198,40,40,0.25)':eff==='trap'?'rgba(230,81,0,0.25)':eff==='extra_place'?'rgba(30,136,229,0.25)':'rgba(46,125,50,0.25)';
+        ctx.fillStyle=clr;ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+      }
+      // 위험 예고 / 공사 예고 / 왕따 / 굳히기 / 제거 / 칸 방어
+      if((eff==='danger_mark'||eff==='construction'||eff==='exile'||eff==='fortify'||eff==='remove'||eff==='cell_clear')&&board[hr][hc]!==0){
+        const clr=eff==='fortify'?'rgba(245,167,23,0.3)':eff==='exile'?'rgba(100,100,100,0.25)':eff==='remove'?'rgba(198,40,40,0.3)':'rgba(184,134,11,0.25)';
+        ctx.fillStyle=clr;ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+        ctx.strokeStyle='rgba(184,134,11,0.7)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+hr*CELL_SIZE,H,0,Math.PI*2);ctx.stroke();
+      }
+      // 돌 이동 — 내 돌 위에서 주변 빈 칸 미리보기
+      if(eff==='move_stone'&&board[hr][hc]===currentPlayer){
+        const adjEmpty=[];
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          if(dr===0&&dc===0)continue;
+          const nr=hr+dr,nc=hc+dc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===0)adjEmpty.push([nr,nc]);
+        }
+        adjEmpty.forEach(([nr,nc])=>{
+          ctx.fillStyle='rgba(30,136,229,0.22)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+          ctx.strokeStyle='rgba(30,136,229,0.7)';ctx.lineWidth=1.3;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(OFF+nc*CELL_SIZE,OFF+nr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        });
+        ctx.strokeStyle='rgba(255,140,0,0.85)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(OFF+hc*CELL_SIZE,OFF+hr*CELL_SIZE,H,0,Math.PI*2);ctx.stroke();
+      }
+      // 폭탄 소형
+      if(eff==='bomb_s'&&board[hr][hc]===0){
+        const bRange=[[0,0],[0,1],[1,0],[1,1]];
+        bRange.forEach(([dr,dc])=>{const nr=hr+dr,nc=hc+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N){ctx.fillStyle='rgba(183,28,28,0.18)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}});
+        ctx.strokeStyle='rgba(183,28,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+        ctx.strokeRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);ctx.setLineDash([]);
+      }
+      // 폭탄 대형
+      if(eff==='bomb_l'&&board[hr][hc]===0){
+        const bRange=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,0],[0,1],[1,-1],[1,0],[1,1]];
+        bRange.forEach(([dr,dc])=>{const nr=hr+dr,nc=hc+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N){ctx.fillStyle='rgba(183,28,28,0.18)';ctx.fillRect(OFF+nc*CELL_SIZE-H,OFF+nr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}});
+        ctx.strokeStyle='rgba(183,28,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+        ctx.strokeRect(OFF+(hc-1)*CELL_SIZE-H,OFF+(hr-1)*CELL_SIZE-H,CELL_SIZE*3,CELL_SIZE*3);ctx.setLineDash([]);
+      }
+      // 지뢰 2개
+      if(eff==='double_mine'&&board[hr][hc]===0){
+        ctx.fillStyle='rgba(230,81,0,0.25)';ctx.fillRect(OFF+hc*CELL_SIZE-H,OFF+hr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+      }
+    }
+  }
   if(clickState&&clickState.mode){
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(isValidTarget(r,c)){ctx.fillStyle='rgba(184,134,11,0.17)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}}
     // ── 스킬 범위 호버 미리보기 ──
@@ -3120,7 +3268,7 @@ function selectCard(idx){
     const cpw=document.getElementById('centerPlaceBtnWrap');if(cpw)cpw.style.display='none';
     drawBoard();
   }
-  selectedCardIdx=selectedCardIdx===idx?null:idx;renderHand(currentKey());
+  selectedCardIdx=selectedCardIdx===idx?null:idx;renderHand(currentKey());drawBoard();
 }
 function passToPlace(){
   if(phase==='place')return;
