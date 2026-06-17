@@ -717,6 +717,31 @@ canvas#boardCanvas{display:block;touch-action:none;}
 </div>
 
 <!-- CLASSIC ONLINE -->
+<div id="page-classic-local" class="page" style="align-items:center;justify-content:center;background:var(--bg);">
+  <div class="online-wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <button style="background:none;border:none;font-size:20px;color:var(--accent);cursor:pointer;" onclick="showPage('page-menu')">←</button>
+      <span style="font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--accent);">클래식 오목 로컬</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px;">같은 방 코드로 다른 기기에서 접속해 대전합니다.</div>
+    <div class="online-section">
+      <div class="online-section-title">방 만들기 (흑돌)</div>
+      <button class="menu-btn primary" onclick="createClassicLocalRoom()">새 방 만들기</button>
+      <div id="classicLocalRoomCodeDisplay" style="display:none;flex-direction:column;gap:7px;align-items:center;">
+        <div style="font-size:12px;color:var(--text3);">방 코드 — 상대방에게 전달하세요</div>
+        <div class="room-code-big" id="classicLocalRoomCodeText"></div>
+        <div id="classicLocalWaitMsg" style="font-size:12px;color:var(--text3);">상대방 입장 대기 중...</div>
+      </div>
+    </div>
+    <div class="online-section">
+      <div class="online-section-title">방 입장하기 (백돌)</div>
+      <input id="classicLocalCodeInput" type="text" maxlength="7" placeholder="방 코드 입력"
+        style="padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;">
+      <button class="menu-btn primary" onclick="joinClassicLocalRoom()">입장하기</button>
+      <div id="classicLocalJoinMsg" style="font-size:12px;color:var(--red);text-align:center;display:none;"></div>
+    </div>
+  </div>
+</div>
 <div id="page-classic-online" class="page" style="align-items:center;justify-content:center;background:var(--bg);">
   <div class="online-wrap">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
@@ -803,10 +828,13 @@ canvas#boardCanvas{display:block;touch-action:none;}
   </div>
   <!-- 승리 오버레이 -->
   <div class="win-overlay" id="cWinOverlay">
-    <div class="win-box">
-      <h2 id="cWinTitle">흑 승리!</h2>
-      <p id="cWinDesc">5개를 연속으로 놓아 승리!</p>
-      <button onclick="afterClassicWin()">메뉴로</button>
+    <div class="win-box" style="gap:14px;">
+      <h2 id="cWinTitle" style="margin:0;font-size:22px;">흑 승리!</h2>
+      <p id="cWinDesc" style="margin:0;font-size:13px;color:var(--text2);">5개를 연속으로 놓아 승리!</p>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="cCloseWinAndReview()" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">복기하기</button>
+        <button onclick="afterClassicWin()" style="flex:1;padding:10px;background:var(--bg2);color:var(--text);border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">메뉴로</button>
+      </div>
     </div>
   </div>
   <!-- 나가기 확인 모달 -->
@@ -2696,6 +2724,19 @@ function drawBoard(){
   if(clickState&&clickState.mode){
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(isValidTarget(r,c)){ctx.fillStyle='rgba(184,134,11,0.17)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}}
     clickState.collected.forEach(([r,c])=>{ctx.strokeStyle='#b8860b';ctx.lineWidth=2;ctx.strokeRect(OFF+c*CELL_SIZE-H+1,OFF+r*CELL_SIZE-H+1,CELL_SIZE-2,CELL_SIZE-2);});
+    if(clickState.moveRange){
+      const[fr,fc]=clickState.moveFrom;
+      ctx.strokeStyle='rgba(255,140,0,0.9)';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.arc(OFF+fc*CELL_SIZE,OFF+fr*CELL_SIZE,H-1,0,Math.PI*2);ctx.stroke();
+      clickState.moveRange.forEach(([mr,mc])=>{
+        ctx.fillStyle='rgba(30,136,229,0.22)';
+        ctx.fillRect(OFF+mc*CELL_SIZE-H,OFF+mr*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);
+        ctx.strokeStyle='rgba(30,136,229,0.75)';ctx.lineWidth=1.5;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.arc(OFF+mc*CELL_SIZE,OFF+mr*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();
+        ctx.setLineDash([]);
+      });
+    }
   }
   // ── 폭탄 위치 선택 중: 범위 미리보기 ──
   if(clickState&&clickState.bombSize){
@@ -2724,7 +2765,7 @@ function drawBoard(){
     }
   }
 }
-function isValidTarget(r,c){if(!clickState)return false;const m=clickState.mode;if(m==='empty')return board[r][c]===0;if(m==='own')return board[r][c]===currentPlayer;if(m==='opp')return board[r][c]===getOpp(currentPlayer);if(m==='stone')return board[r][c]!==0;return true;}
+function isValidTarget(r,c){if(!clickState)return false;const m=clickState.mode;if(m==='empty'){if(clickState.moveRange)return clickState.moveRange.some(([mr,mc])=>mr===r&&mc===c);return board[r][c]===0;}if(m==='own')return board[r][c]===currentPlayer;if(m==='opp')return board[r][c]===getOpp(currentPlayer);if(m==='stone')return board[r][c]!==0;return true;}
 
 // ── Board events ──────────────────────────────────────
 function initBoardEvents(){
@@ -3135,7 +3176,23 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
     if(eff==='bomb_l')clickState.bombSize=3;
     return;
   }
-  if(eff==='move_stone'){startClick('own',1,(cs)=>{const[r,c]=cs[0];clickState={mode:'empty',max:1,collected:[],callback:(cs2)=>{const[nr,nc]=cs2[0];if(Math.abs(nr-r)>1||Math.abs(nc-c)>1){setStatus('인접 칸으로만!');endGoPlace();return;}board[nr][nc]=board[r][c];board[r][c]=0;if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}setStatus('돌 이동!');endGoPlace();}};setStatus('이동할 빈 칸을 클릭하세요.');drawBoard();});return;}
+  if(eff==='move_stone'){startClick('own',1,(cs)=>{
+    const[r,c]=cs[0];
+    const adjEmpty=[];
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+      if(dr===0&&dc===0)continue;
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===0)adjEmpty.push([nr,nc]);
+    }
+    if(adjEmpty.length===0){setStatus('이동 가능한 인접 빈 칸이 없습니다!');endGoPlace();return;}
+    clickState={mode:'empty',max:1,collected:[],moveRange:adjEmpty,moveFrom:[r,c],callback:(cs2)=>{
+      const[nr,nc]=cs2[0];
+      board[nr][nc]=board[r][c];board[r][c]=0;
+      if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}
+      setStatus('돌 이동!');endGoPlace();
+    }};
+    setStatus('파란 칸을 클릭해 이동할 위치를 선택하세요.');drawBoard();
+  });return;}
   if(eff==='unstable_two'){
   let first=null;
   const pickFirst=()=>{startClick('empty',1,(cs)=>{first=cs[0];pickSecond();});};
@@ -4013,12 +4070,9 @@ let cCellSize=34;
 
 function startClassicGame(mode){
   if(mode==='online'){showPage('page-classic-online');resetClassicOnlineUI();return;}
-  // 로컬
-  cIsOnline=false;cRoomId=null;cMyRole=null;
-  const nick=currentUserData?currentUserData.nickname:'플레이어';
-  cNicknames={black:nick+'(흑)',white:nick+'(백)'};
-  showPage('page-classic-game');
-  initClassicGame();
+  // 로컬: 방 코드 방식으로 두 기기에서 플레이
+  showPage('page-classic-local');
+  resetClassicLocalUI();
 }
 
 function initClassicGame(opts={}){
@@ -4027,7 +4081,11 @@ function initClassicGame(opts={}){
   cMyRole=opts.myRole||null;
   if(opts.nicknames)cNicknames=opts.nicknames;
   cBoard=Array.from({length:C_BS},()=>new Array(C_BS).fill(0));
-  cCurrentPlayer=1;cWinnerDetermined=false;cAiThinking=false;cSelectedCell=null;
+  cCurrentPlayer=1;cWinnerDetermined=false;cAiThinking=false;cSelectedCell=null;cLastMove=null;cWinStones=[];
+  if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
+  if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
+  function cGlowLoop(){cDrawBoard();cGlowAnim=requestAnimationFrame(cGlowLoop);}
+  cGlowAnim=requestAnimationFrame(cGlowLoop);
   const btn=document.getElementById('cPlaceBtnWrap');if(btn)btn.style.display='none';
   if(!opts.aiGame)cIsAiGame=false;
   document.getElementById('cBlackNick').textContent=cNicknames.black;
@@ -4061,6 +4119,15 @@ function cResizeBoard(){
   cDrawBoard();
 }
 
+function cStartGlowLoop(){
+  if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
+  function loop(){
+    // 승리 애니메이션 중일 땐 글로우 루프 중단 (cDrawWinAnim이 직접 cDrawBoard 호출)
+    if(!cWinAnimFrame)cDrawBoard();
+    cGlowAnim=requestAnimationFrame(loop);
+  }
+  cGlowAnim=requestAnimationFrame(loop);
+}
 function cDrawBoard(){
   const cv=document.getElementById('classicBoardCanvas');
   if(!cv)return;
@@ -4085,11 +4152,28 @@ function cDrawBoard(){
   for(let r=0;r<C_BS;r++)for(let c=0;c<C_BS;c++){
     if(!cBoard[r][c])continue;
     const x=OFF+c*CS, y=OFF+r*CS, R=CS*0.44;
+    // 마지막 착수 돌 글로우 배경 (돌 아래 레이어)
+    if(cLastMove&&cLastMove.r===r&&cLastMove.c===c){
+      const pulse=0.55+0.45*Math.sin(Date.now()/220);
+      const grad=ctx.createRadialGradient(x,y,0,x,y,R*2.2);
+      grad.addColorStop(0,`rgba(255,220,40,${0.55*pulse})`);
+      grad.addColorStop(0.5,`rgba(255,190,0,${0.25*pulse})`);
+      grad.addColorStop(1,'rgba(255,160,0,0)');
+      ctx.beginPath();ctx.arc(x,y,R*2.2,0,Math.PI*2);
+      ctx.fillStyle=grad;ctx.fill();
+    }
     const g=ctx.createRadialGradient(x-R*.3,y-R*.3,1,x,y,R);
     if(cBoard[r][c]===1){g.addColorStop(0,'#888');g.addColorStop(1,'#111');}
     else{g.addColorStop(0,'#fff');g.addColorStop(1,'#bbb');}
     ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
     if(cBoard[r][c]===2){ctx.strokeStyle='#bbb';ctx.lineWidth=1;ctx.stroke();}
+    // 마지막 착수 돌 빛나는 테두리
+    if(cLastMove&&cLastMove.r===r&&cLastMove.c===c){
+      const pulse=0.55+0.45*Math.sin(Date.now()/220);
+      ctx.beginPath();ctx.arc(x,y,R*1.08,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,210,30,${0.9*pulse})`;
+      ctx.lineWidth=CS*0.09;ctx.stroke();
+    }
   }
   // 선택된 착수 위치 강조
   if(cSelectedCell&&cIsMyClassicTurn()){
@@ -4114,23 +4198,50 @@ function cDrawBoard(){
 
 let cHoverCell=null;
 let cSelectedCell=null;
+let cLastMove=null; // 마지막 착수 위치 {r,c}
+let cGlowAnim=null; // 글로우 애니메이션 루프
 function cInitBoardEvents(){
   const cv=document.getElementById('classicBoardCanvas');
   if(!cv)return;
-  cv.onmousemove=cv.ontouchmove=e=>{
-    e.preventDefault();
+  // 마우스 호버 (데스크탑)
+  cv.onmousemove=e=>{
     const{r,c}=cGetCell(e);
     if(r>=0&&r<C_BS&&c>=0&&c<C_BS){cHoverCell={r,c};cDrawBoard();}
   };
   cv.onmouseleave=()=>{cHoverCell=null;cDrawBoard();};
-  cv.onclick=cv.ontouchend=e=>{
+  // 터치 이동 중 호버 표시 (선택 없이 위치만 표시)
+  cv.ontouchmove=e=>{
     e.preventDefault();
-    // [버그수정] AI가 생각 중일 때는 클릭 차단
+    const{r,c}=cGetCell(e);
+    if(r>=0&&r<C_BS&&c>=0&&c<C_BS){cHoverCell={r,c};cDrawBoard();}
+  };
+  // 마우스 클릭
+  cv.onclick=e=>{
     if(cAiThinking||!cIsMyClassicTurn()||cWinnerDetermined)return;
     const{r,c}=cGetCell(e);
     if(r<0||r>=C_BS||c<0||c>=C_BS)return;
     if(cBoard[r][c]!==0)return;
-    // 같은 칸 다시 클릭 → 선택 해제
+    if(cSelectedCell&&cSelectedCell.r===r&&cSelectedCell.c===c){
+      cSelectedCell=null;
+      const btn=document.getElementById('cPlaceBtnWrap');
+      if(btn)btn.style.display='none';
+      cSetStatus(cCurrentPlayer===1?'흑의 차례입니다. 보드를 클릭해 착수하세요.':'백의 차례입니다. 보드를 클릭해 착수하세요.');
+      cDrawBoard();return;
+    }
+    cSelectedCell={r,c};
+    cDrawBoard();
+    const btn=document.getElementById('cPlaceBtnWrap');
+    if(btn)btn.style.display='block';
+    cSetStatus('선택한 위치에 착수하려면 아래 착수 버튼을 누르세요.');
+  };
+  // 터치 끝 — 호버 반드시 초기화 후 선택 처리
+  cv.ontouchend=e=>{
+    e.preventDefault();
+    cHoverCell=null; // 터치 끝나면 호버 흔적 제거
+    if(cAiThinking||!cIsMyClassicTurn()||cWinnerDetermined){cDrawBoard();return;}
+    const{r,c}=cGetCell(e);
+    if(r<0||r>=C_BS||c<0||c>=C_BS){cDrawBoard();return;}
+    if(cBoard[r][c]!==0){cDrawBoard();return;}
     if(cSelectedCell&&cSelectedCell.r===r&&cSelectedCell.c===c){
       cSelectedCell=null;
       const btn=document.getElementById('cPlaceBtnWrap');
@@ -4173,7 +4284,15 @@ function cIsMyClassicTurn(){
 function cPlaceStone(r,c){
   if(cWinnerDetermined)return;
   if(cBoard[r][c]!==0)return;
+  // 렌주룰: 흑돌 금수 체크
+  if(cCurrentPlayer===1&&cIsRenjuForbidden(r,c,cBoard)){
+    cSetStatus('금수입니다! 다른 위치에 착수하세요. (3-3/4-4/장목 금지)');
+    cSelectedCell=null;
+    const btn=document.getElementById('cPlaceBtnWrap');if(btn)btn.style.display='none';
+    return;
+  }
   cBoard[r][c]=cCurrentPlayer;
+  cLastMove={r,c};
   cDrawBoard();
   if(cCheckWin(r,c,cCurrentPlayer)){
     cShowWin(cCurrentPlayer);
@@ -4184,15 +4303,96 @@ function cPlaceStone(r,c){
   cEndTurn();
 }
 function cCheckWin(r,c,p){
+  return cGetWinStones(r,c,p,cBoard).length>0;
+}
+// 승리한 돌 5개 좌표 반환 (없으면 빈 배열)
+function cGetWinStones(r,c,p,bd){
   const dirs=[[0,1],[1,0],[1,1],[1,-1]];
   for(const[dr,dc]of dirs){
-    let cnt=1;
-    for(let i=1;i<5;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||cBoard[nr][nc]!==p)break;cnt++;}
-    for(let i=1;i<5;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||cBoard[nr][nc]!==p)break;cnt++;}
-    if(cnt>=5)return true;
+    const stones=[[r,c]];
+    for(let i=1;i<9;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;stones.push([nr,nc]);}
+    for(let i=1;i<9;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;stones.unshift([nr,nc]);}
+    if(p===1&&stones.length===5)return stones;
+    if(p===2&&stones.length>=5)return stones.slice(0,5);
   }
+  return [];
+}
+// ── 렌주룰 금수 판정 ─────────────────────────────────────
+function cIsRenjuForbidden(r,c,bd){
+  // 임시로 놔봄
+  const tmp=bd.map(row=>[...row]);
+  tmp[r][c]=1;
+  // 장목 (흑이 6개 이상 일렬)
+  if(cCountLine(r,c,1,tmp)>=6)return true;
+  // 열린 4(삼) 개수 세기 → 4-4 판정
+  const open4=cCountOpen4(r,c,1,tmp);
+  if(open4>=2)return true;
+  // 열린 3(삼) 개수 세기 → 3-3 판정
+  const open3=cCountOpen3(r,c,1,tmp);
+  if(open3>=2)return true;
   return false;
 }
+function cCountLine(r,c,p,bd){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  let max=0;
+  for(const[dr,dc]of dirs){
+    let cnt=1;
+    for(let i=1;i<9;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;}
+    for(let i=1;i<9;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;}
+    if(cnt>max)max=cnt;
+  }
+  return max;
+}
+// 해당 위치에서 방향별로 열린 4(4자리 연속 + 양쪽 빈칸) 개수
+function cCountOpen4(r,c,p,bd){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  let count=0;
+  for(const[dr,dc]of dirs){
+    // 연속 길이
+    let cnt=1;
+    let fwd=0,bwd=0;
+    for(let i=1;i<6;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;fwd=i;}
+    for(let i=1;i<6;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;bwd=i;}
+    if(cnt===4){
+      // 앞쪽 빈칸
+      const fr=r+dr*(fwd+1),fc=c+dc*(fwd+1);
+      const br=r-dr*(bwd+1),bc=c-dc*(bwd+1);
+      const fOpen=fr>=0&&fr<C_BS&&fc>=0&&fc<C_BS&&bd[fr][fc]===0;
+      const bOpen=br>=0&&br<C_BS&&bc>=0&&bc<C_BS&&bd[br][bc]===0;
+      if(fOpen||bOpen)count++;
+    }
+  }
+  return count;
+}
+// 열린 3: 양쪽이 열린 3연속 (렌주룰 기준 엄밀히는 복잡하나 일반적 구현)
+function cCountOpen3(r,c,p,bd){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  let count=0;
+  for(const[dr,dc]of dirs){
+    let cnt=1;
+    let fwd=0,bwd=0;
+    for(let i=1;i<5;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;fwd=i;}
+    for(let i=1;i<5;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||bd[nr][nc]!==p)break;cnt++;bwd=i;}
+    if(cnt===3){
+      const fr=r+dr*(fwd+1),fc=c+dc*(fwd+1);
+      const br=r-dr*(bwd+1),bc=c-dc*(bwd+1);
+      const fOpen=fr>=0&&fr<C_BS&&fc>=0&&fc<C_BS&&bd[fr][fc]===0;
+      const bOpen=br>=0&&br<C_BS&&bc>=0&&bc<C_BS&&bd[br][bc]===0;
+      // 양쪽 모두 열린 경우만 열린 3으로 판정 (렌주룰)
+      if(fOpen&&bOpen){
+        // 4가 되지 않을 것 확인 (해당 방향으로 이미 4 이상이면 skip)
+        const extF=fr>=0&&fr<C_BS&&fc>=0&&fc<C_BS?bd[fr][fc]:null;
+        const extB=br>=0&&br<C_BS&&bc>=0&&bc<C_BS?bd[br][bc]:null;
+        if(extF!==p&&extB!==p)count++;
+      }
+    }
+  }
+  return count;
+}
+let cWinStones=[]; // 승리한 5개 돌 좌표
+let cWinAnimFrame=null; // 숫자 애니메이션 루프
+let cWinAnimStart=null;
+
 function cShowWin(player){
   if(cWinnerDetermined)return;
   cWinnerDetermined=true;
@@ -4204,11 +4404,87 @@ function cShowWin(player){
   }else{
     document.getElementById('cWinDesc').textContent='5개를 연속으로 놓아 승리!';
   }
-  document.getElementById('cWinOverlay').classList.add('show');
   if(cIsOnline&&currentUser){const myP=cMyRole==='black'?1:2;recordResult(player===myP);}
+  // 승리 돌 좌표 구하기
+  const {r,c}=cLastMove||{r:0,c:0};
+  cWinStones=cGetWinStones(r,c,player,cBoard);
+  // 숫자 순차 등장 → 다 뜨면 오버레이 표시
+  cWinAnimStart=null;
+  if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
+  if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
+  function winAnimLoop(ts){
+    if(!cWinAnimStart)cWinAnimStart=ts;
+    const elapsed=ts-cWinAnimStart;
+    cDrawWinAnim(player,elapsed);
+    // 각 돌 0.22s 간격, 마지막 돌 후 0.6s 뒤 오버레이
+    const totalDur=cWinStones.length*220+600;
+    if(elapsed<totalDur){
+      cWinAnimFrame=requestAnimationFrame(winAnimLoop);
+    }else{
+      cWinAnimFrame=null;
+      document.getElementById('cWinOverlay').classList.add('show');
+      // 오버레이 뜬 후에도 마지막 돌 글로우 유지
+      cStartGlowLoop();
+    }
+  }
+  cWinAnimFrame=requestAnimationFrame(winAnimLoop);
 }
+
+function cDrawWinAnim(player,elapsed){
+  const cv=document.getElementById('classicBoardCanvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const scale=2, OFF=10*scale, CS=cCellSize*scale;
+  // 기본 보드 다시 그림
+  cDrawBoard();
+  // 승리 돌들 위에 숫자 순차 표시
+  cWinStones.forEach(([r,c],i)=>{
+    const appear=i*220; // 각 돌 220ms 간격
+    if(elapsed<appear)return;
+    const x=OFF+c*CS, y=OFF+r*CS, R=CS*0.44;
+    const age=elapsed-appear;
+    // 펄스 글로우
+    const pulse=0.6+0.4*Math.sin(age/180);
+    const glowC=player===1?`rgba(255,160,30,${0.7*pulse})`:`rgba(100,180,255,${0.7*pulse})`;
+    const grad=ctx.createRadialGradient(x,y,0,x,y,R*2);
+    grad.addColorStop(0,glowC);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();ctx.arc(x,y,R*2,0,Math.PI*2);
+    ctx.fillStyle=grad;ctx.fill();
+    // 링
+    const ringA=Math.min(1,age/120);
+    ctx.beginPath();ctx.arc(x,y,R*1.15,0,Math.PI*2);
+    ctx.strokeStyle=player===1?`rgba(255,180,0,${ringA})`:`rgba(80,160,255,${ringA})`;
+    ctx.lineWidth=CS*0.10;ctx.stroke();
+    // 숫자 (scale에 맞게)
+    const numSize=Math.min(CS*0.42,28*scale);
+    const alpha=Math.min(1,age/100);
+    const scl=0.5+0.5*Math.min(1,age/120);
+    ctx.save();
+    ctx.translate(x,y);ctx.scale(scl,scl);
+    ctx.font=`700 ${numSize}px "Black Han Sans",sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=player===1?`rgba(255,230,80,${alpha})`:`rgba(30,80,200,${alpha})`;
+    ctx.strokeStyle=player===1?`rgba(120,60,0,${alpha})`:`rgba(200,230,255,${alpha})`;
+    ctx.lineWidth=numSize*0.15;
+    ctx.strokeText(i+1,0,0);
+    ctx.fillText(i+1,0,0);
+    ctx.restore();
+  });
+}
+
+// 복기 모드: 오버레이만 닫고 판은 그대로
+function cCloseWinAndReview(){
+  document.getElementById('cWinOverlay').classList.remove('show');
+  // 복기 안내 표시
+  cSetStatus('복기 중 — 판을 자유롭게 살펴보세요. 상단 나가기로 메뉴로 돌아갑니다.');
+  // 보드 다시 그려서 글로우만 유지
+  cDrawBoard();
+}
+
 function afterClassicWin(){
   document.getElementById('cWinOverlay').classList.remove('show');
+  if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
   cCleanupOnline();
   if(currentUserData?.isGuest)showMenuWithGuest();
   else if(currentUserData)showMenuWithUser();
@@ -4232,27 +4508,17 @@ const C_AI_DIRS=[[0,1],[1,0],[1,1],[1,-1]];
 // ── 오목 AI 엔진 ────────────────────────────────────────
 // 후보: 기존 돌 주변 1칸 이내 빈 칸 (2칸→1칸으로 축소해 후보 수 대폭 감소)
 function cAiCandidates(bd){
-  const sz=C_BS, cands=new Set();
+  const sz=C_BS, seen=new Uint8Array(sz*sz), result=[];
   for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
     if(!bd[r][c]) continue;
-    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
       if(dr===0&&dc===0) continue;
-      const nr=r+dr,nc=c+dc;
-      if(nr>=0&&nr<sz&&nc>=0&&nc<sz&&!bd[nr][nc]) cands.add(nr*sz+nc);
+      const nr=r+dr,nc=c+dc,idx=nr*sz+nc;
+      if(nr>=0&&nr<sz&&nc>=0&&nc<sz&&!bd[nr][nc]&&!seen[idx]){seen[idx]=1;result.push([nr,nc]);}
     }
   }
-  // 후보가 너무 적으면 2칸으로 확장
-  if(cands.size<5){
-    for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
-      if(!bd[r][c]) continue;
-      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
-        const nr=r+dr,nc=c+dc;
-        if(nr>=0&&nr<sz&&nc>=0&&nc<sz&&!bd[nr][nc]) cands.add(nr*sz+nc);
-      }
-    }
-  }
-  if(!cands.size) cands.add(Math.floor(sz/2)*sz+Math.floor(sz/2));
-  return [...cands].map(v=>[Math.floor(v/sz),v%sz]);
+  if(!result.length){const m=Math.floor(sz/2);result.push([m,m]);}
+  return result;
 }
 
 // 한 방향 연속 돌 + 열림 카운트
@@ -4267,6 +4533,7 @@ function cAiLine(bd,r,c,dr,dc,p){
 function cAiEval(bd,p){
   const sz=C_BS; let score=0;
   const S={5:1e7,4:{2:1e5,1:1e3},3:{2:1e4,1:500},2:{2:200,1:20}};
+  const mid=Math.floor(sz/2);
   for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
     if(!bd[r][c]) continue;
     const cur=bd[r][c], sign=cur===p?1:-2.2;
@@ -4275,9 +4542,6 @@ function cAiEval(bd,p){
       if(cnt>=5){score+=sign*S[5];continue;}
       if(S[cnt]) score+=sign*(S[cnt][open]||0);
     }
-  }
-  const mid=Math.floor(sz/2);
-  for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
     if(bd[r][c]===p) score+=Math.max(0,3-Math.max(Math.abs(r-mid),Math.abs(c-mid)));
   }
   return score;
@@ -4294,25 +4558,27 @@ function cAiCheckWin(bd,r,c,p){
   return false;
 }
 
-// 빠른 휴리스틱 점수 (cAiEval 대신 단일 칸 기준으로만 계산 — 정렬용)
+// 빠른 휴리스틱 점수 (정렬용) — 타이 방지를 위해 중앙 거리 패널티 포함
 function cAiQuickScore(bd,r,c,p){
-  const opp=p===1?2:1; let s=0;
+  const opp=p===1?2:1, sz=C_BS, mid=Math.floor(sz/2); let s=0;
+  const S={5:1e7,4:{2:1e5,1:1e3},3:{2:1e4,1:500},2:{2:200,1:20}};
   for(const[dr,dc]of C_AI_DIRS){
     bd[r][c]=p; const{cnt:c1,open:o1}=cAiLine(bd,r,c,dr,dc,p); bd[r][c]=0;
     bd[r][c]=opp; const{cnt:c2,open:o2}=cAiLine(bd,r,c,dr,dc,opp); bd[r][c]=0;
-    const S={5:1e7,4:{2:1e5,1:1e3},3:{2:1e4,1:500},2:{2:200,1:20}};
     s+=(c1>=5?S[5]:(S[c1]?S[c1][o1]||0:0));
     s+=(c2>=5?S[5]:(S[c2]?S[c2][o2]||0:0))*1.2;
   }
+  // 중앙에 가까울수록 약간 유리 (타이브레이킹)
+  s+=Math.max(0,4-Math.max(Math.abs(r-mid),Math.abs(c-mid)))*3;
   return s;
 }
 
-// 후보 정렬 (빠른 점수로만)
+// 후보 정렬 + 동점 시 셔플로 고정 패턴 방지
 function cAiSortCands(bd,cands,p){
-  return cands
+  const scored=cands
     .map(([r,c])=>({r,c,score:cAiQuickScore(bd,r,c,p)}))
-    .sort((a,b)=>b.score-a.score)
-    .map(({r,c})=>[r,c]);
+    .sort((a,b)=>b.score-a.score||(Math.random()-0.5));
+  return scored.map(({r,c})=>[r,c]);
 }
 
 // 미니맥스 + 알파베타
@@ -4321,8 +4587,7 @@ function cMinimax(bd,depth,alpha,beta,isMax,aiP){
   const p=isMax?aiP:(aiP===1?2:1);
   const cands=cAiCandidates(bd);
   if(depth===0) return cAiEval(bd,aiP);
-  // 깊이별 후보 수 제한 (속도 핵심)
-  const limit=depth>=3?8:depth===2?10:15;
+  const limit=depth>=3?6:depth===2?8:12;
   const sorted=cAiSortCands(bd,cands,p);
   const top=sorted.slice(0,limit);
   if(isMax){
@@ -4351,7 +4616,6 @@ function cMinimax(bd,depth,alpha,beta,isMax,aiP){
 }
 
 // AI 최선의 수 계산
-// cAiDepth(UI 선택값)를 실제 탐색 깊이로 변환: 8→4, 6→3, 4→2, 2→1
 function cAiBestMove(bd,aiP,depth){
   const realDepth={8:4,6:3,4:2,2:1}[depth]||2;
   const cands=cAiCandidates(bd);
@@ -4361,17 +4625,16 @@ function cAiBestMove(bd,aiP,depth){
   // 즉시 막기
   for(const[r,c]of cands){bd[r][c]=opp;if(cAiCheckWin(bd,r,c,opp)){bd[r][c]=0;return[r,c];}bd[r][c]=0;}
   const sorted=cAiSortCands(bd,cands,aiP);
-  // 최상위 후보만 탐색 (난이도별)
-  const topLimit={8:12,6:10,4:8,2:6}[depth]||8;
+  const topLimit={8:10,6:8,4:6,2:5}[depth]||8;
   const top=sorted.slice(0,topLimit);
-  let bestScore=-Infinity, bestMove=top[0];
+  let bestScore=-Infinity, bestMove=null;
   for(const[r,c]of top){
     bd[r][c]=aiP;
     const v=cMinimax(bd,realDepth-1,-Infinity,Infinity,false,aiP);
     bd[r][c]=0;
-    if(v>bestScore){bestScore=v;bestMove=[r,c];}
+    if(v>bestScore||(v===bestScore&&Math.random()<0.15)){bestScore=v;bestMove=[r,c];}
   }
-  return bestMove;
+  return bestMove||top[0];
 }
 
 // AI 착수 실행
@@ -4455,6 +4718,54 @@ function cStopOppTimer(){
   if(wrap)wrap.classList.remove('active');
 }
 
+// ── 클래식 오목 로컬 대기실 (방 코드 방식) ──
+function resetClassicLocalUI(){
+  document.getElementById('classicLocalRoomCodeDisplay').style.display='none';
+  document.getElementById('classicLocalRoomCodeText').textContent='';
+  document.getElementById('classicLocalWaitMsg').textContent='상대방 입장 대기 중...';
+  document.getElementById('classicLocalJoinMsg').style.display='none';
+  document.getElementById('classicLocalCodeInput').value='';
+}
+function createClassicLocalRoom(){
+  if(!db){alert('Firebase 초기화 실패');return;}
+  const code='L'+genCode();cRoomId=code;cMyRole='black';
+  const myNick=currentUserData?currentUserData.nickname:'흑';
+  const myUid=currentUser?currentUser.uid:null;
+  db.ref('rooms/'+code).set({status:'waiting',blackNick:myNick,blackUid:myUid,whiteNick:null,whiteUid:null,classic:true,local:true,createdAt:Date.now()}).then(()=>{
+    const disp=document.getElementById('classicLocalRoomCodeDisplay');disp.style.display='flex';
+    document.getElementById('classicLocalRoomCodeText').textContent=code;
+    db.ref('rooms/'+code+'/whiteNick').on('value',snap=>{
+      if(snap.val()){
+        document.getElementById('classicLocalWaitMsg').textContent='상대방 입장! 게임 시작...';
+        db.ref('rooms/'+code+'/status').set('playing');
+        db.ref('rooms/'+code).once('value').then(s=>{
+          const r=s.val()||{};
+          setTimeout(()=>startClassicOnlineGame(code,'black',myNick,snap.val(),null,r.whiteUid||null),800);
+        });
+      }
+    });
+  }).catch(e=>alert('방 생성 실패: '+e.message));
+}
+function joinClassicLocalRoom(){
+  if(!db){alert('Firebase 초기화 실패');return;}
+  const code=document.getElementById('classicLocalCodeInput').value.trim().toUpperCase();
+  const msgEl=document.getElementById('classicLocalJoinMsg');
+  if(code.length<6){msgEl.textContent='방 코드를 입력하세요.';msgEl.style.display='block';return;}
+  db.ref('rooms/'+code).once('value').then(snap=>{
+    const room=snap.val();
+    if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
+    if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.display='block';return;}
+    const myNick=currentUserData?currentUserData.nickname:'백';
+    const myUid=currentUser?currentUser.uid:null;
+    cRoomId=code;cMyRole='white';
+    db.ref('rooms/'+code).update({whiteNick:myNick,whiteUid:myUid}).then(()=>{
+      msgEl.textContent='입장 성공! 대기 중...';msgEl.style.color='#2e7d32';msgEl.style.display='block';
+      db.ref('rooms/'+code+'/status').on('value',snap2=>{
+        if(snap2.val()==='playing')setTimeout(()=>startClassicOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null),400);
+      });
+    });
+  }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
+}
 // ── 클래식 오목 온라인 ──
 function resetClassicOnlineUI(){
   document.getElementById('classicRoomCodeDisplay').style.display='none';
@@ -4530,10 +4841,11 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
     cSetStatus('흑(상대)의 차례입니다. 대기 중...');
     clearInterval(cTimerInterval);
   }
-  // 상태 수신
+  // 상태 수신 (상대방이 push한 state만 처리)
   db.ref('rooms/'+code+'/cState').on('value',snap=>{
     const val=snap.val();if(!val||!val.data)return;
-    if(role==='black')return;
+    // 내가 push한 건 무시
+    if(val.pushedBy===role)return;
     cDeserialize(val.data);
     cResizeBoard();cDrawBoard();cUpdateTurnUI();
     if(cWinnerDetermined){
@@ -4556,16 +4868,17 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
   });
 }
 function cPushState(){
-  if(!db||!cRoomId||cMyRole!=='black')return;
-  db.ref('rooms/'+cRoomId+'/cState').set({data:cSerialize(),ts:Date.now()});
+  if(!db||!cRoomId||!cMyRole)return;
+  db.ref('rooms/'+cRoomId+'/cState').set({data:cSerialize(),pushedBy:cMyRole,ts:Date.now()});
 }
-function cSerialize(){return JSON.stringify({board:cBoard,currentPlayer:cCurrentPlayer,winner:cWinnerDetermined?cCurrentPlayer:null,nicknames:cNicknames});}
+function cSerialize(){return JSON.stringify({board:cBoard,currentPlayer:cCurrentPlayer,winner:cWinnerDetermined?cCurrentPlayer:null,nicknames:cNicknames,lastMove:cLastMove});}
 function cDeserialize(raw){
   try{
     const s=JSON.parse(raw);
     cBoard=s.board;cCurrentPlayer=s.currentPlayer;
     if(s.winner){cWinnerDetermined=true;}
     if(s.nicknames)cNicknames=s.nicknames;
+    if(s.lastMove)cLastMove=s.lastMove;
   }catch(e){console.error(e);}
 }
 
@@ -4601,6 +4914,8 @@ function sendClassicChat(){
   input.value='';
 }
 function cCleanupOnline(){
+  if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
+  if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
   clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
   if(cChatListener&&db&&cRoomId)db.ref('rooms/'+cRoomId+'/cChat').off('child_added',cChatListener);
   if(cRoomId&&db){
