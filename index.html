@@ -4257,10 +4257,12 @@ let cChatListener=null;
 let cCellSize=34;
 
 function startClassicGame(mode){
-  if(mode==='online'){showPage('page-classic-online');resetClassicOnlineUI();return;}
-  // 로컬: 방 코드 방식으로 두 기기에서 플레이
-  showPage('page-classic-local');
-  resetClassicLocalUI();
+  if(mode==='online'){openClassicLobby();return;}
+  // 로컬 2인: 같은 기기에서 바로 시작
+  const nick=currentUserData?currentUserData.nickname:'플레이어';
+  cNicknames={black:nick+'(흑)',white:nick+'(백)'};
+  showPage('page-classic-game');
+  initClassicGame({});
 }
 
 function initClassicGame(opts={}){
