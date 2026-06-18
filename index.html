@@ -3109,8 +3109,22 @@ function bpos(e,cv){const rect=cv.getBoundingClientRect(),sx=cv.width/rect.width
 function boardClick(r,c){
   if(_clickBlocked)return;
   if(clickState&&clickState.mode){
-    // 이미 선택 완료(발동 버튼 표시 중)이면 보드 재클릭으로 교체 불가
+    // 이미 선택 완료(발동 버튼 표시 중)인 경우
     if(clickState.collected.length>=clickState.max){
+      // max===1: 다른 유효한 칸을 클릭하면 기존 선택을 버리고 그 칸으로 교체 (범위 내 자유 변경)
+      if(clickState.max===1&&isValidTarget(r,c)){
+        const[pr,pc]=clickState.collected[0];
+        if(pr===r&&pc===c){
+          // 같은 칸 재클릭 → 선택 취소
+          clickState.collected=[];drawBoard();showSkillConfirmBtn(false);
+          setStatus('1개를 선택하세요.');
+          return;
+        }
+        clickState.collected=[[r,c]];drawBoard();
+        setStatus('위치 선택 완료! [스킬 발동] 버튼을 눌러 스킬을 사용하세요.');
+        showSkillConfirmBtn(true);
+        return;
+      }
       setStatus('위치 선택 완료! [스킬 발동] 버튼을 눌러 스킬을 사용하세요.');
       return;
     }
@@ -3120,12 +3134,15 @@ function boardClick(r,c){
     if(alreadyIdx!==-1){clickState.collected.splice(alreadyIdx,1);drawBoard();setStatus(`${clickState.max-clickState.collected.length}개 더 선택하세요.`);return;}
     clickState.collected.push([r,c]);drawBoard();
     if(clickState.collected.length>=clickState.max){
+      // autoConfirm: 확정 버튼 없이 즉시 다음 단계로 진행 (예: 돌 이동의 1단계)
+      if(clickState.autoConfirm){confirmSkill();return;}
       setStatus('위치 선택 완료! [스킬 발동] 버튼을 눌러 스킬을 사용하세요.');
       showSkillConfirmBtn(true);
     }
     else setStatus(`${clickState.max-clickState.collected.length}개 더 선택하세요.`);
     return;
   }
+
   // 카드 단계에서 판 클릭 시 → 자동으로 착수 모드로 전환
   if(phase==='card'){
     if(isOnlineGame&&!isMyTurn()){setStatus('상대방의 차례입니다.');return;}
@@ -3526,7 +3543,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       setStatus('돌 이동!');endGoPlace();
     }};
     setStatus('파란 칸을 클릭해 이동할 위치를 선택하세요.');drawBoard();
-  },'move_stone');return;}
+  },'move_stone',true);return;}
   if(eff==='unstable_two'){
   let first=null;
   const pickFirst=()=>{startClick('empty',1,(cs)=>{first=cs[0];pickSecond();},'unstable_two');};
@@ -3585,7 +3602,7 @@ function cancelSkill(){
 }
 function endGoPlace(){phase='place';selectedCardIdx=null;pendingSelected=null;showSkillConfirmBtn(false);showPlaceBtn(true);renderAll();setStatus('착수할 위치를 클릭 후 [착수 확정]을 누르세요. (카드 클릭 시 스킬 취소 후 재선택 가능)');}
 let _clickBlocked=false;
-function startClick(mode,max,cb,skillEff){clickState={mode,max,collected:[],callback:cb,_skillEff:skillEff||''};showSkillConfirmBtn(false);const ml={empty:'빈 칸',own:'내 돌',opp:'상대 돌',stone:'돌',any:'칸'};setStatus(`${ml[mode]||mode} ${max}개를 클릭하세요.`);// 모달 닫힘 후 이벤트 전파로 즉시 발동 방지
+function startClick(mode,max,cb,skillEff,autoConfirm){clickState={mode,max,collected:[],callback:cb,_skillEff:skillEff||'',autoConfirm:!!autoConfirm};showSkillConfirmBtn(false);const ml={empty:'빈 칸',own:'내 돌',opp:'상대 돌',stone:'돌',any:'칸'};setStatus(`${ml[mode]||mode} ${max}개를 클릭하세요.`);// 모달 닫힘 후 이벤트 전파로 즉시 발동 방지
 _clickBlocked=true;setTimeout(()=>{_clickBlocked=false;},320);drawBoard();}
 
 // ── 착수 확정 ─────────────────────────────────────────────────
