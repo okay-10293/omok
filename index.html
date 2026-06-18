@@ -441,6 +441,13 @@ canvas#boardCanvas{display:block;touch-action:none;}
 .card-pick-item .cpdesc{font-size:11px;color:var(--text2);margin-top:2px;}
 .badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700;}
 .b-배치{background:#e8f5e9;color:#2e7d32;}.b-방어{background:#e3f2fd;color:#1565c0;}
+/* 항복 버튼 */
+.surrender-btn{width:100%;padding:8px 10px;background:transparent;border:1.5px solid var(--red);border-radius:8px;font-size:12px;font-weight:700;color:var(--red);margin-top:7px;cursor:pointer;transition:background .15s,color .15s,opacity .15s;}
+.surrender-btn:active{background:var(--red);color:#fff;opacity:.85;}
+.surrender-btn:hover{background:rgba(198,40,40,0.06);}
+/* 항복 확인 모달 */
+#surrenderModal .modal-box h3{color:var(--red);}
+#cSurrenderModal .modal-box h3{color:var(--red);}
 .b-방해{background:#fce4ec;color:#c62828;}.b-강화{background:#fff8e1;color:#f57f17;}
 .b-특수{background:#f3e5f5;color:#6a1b9a;}.b-별{background:#fff9c4;color:#f9a825;}
 .b-즉시{background:#f5f5f5;color:#555;}.b-지속{background:#e8f5e9;color:#2e7d32;}
@@ -678,11 +685,31 @@ canvas#boardCanvas{display:block;touch-action:none;}
 
 <!-- AI 난이도 선택 모달 -->
 <div class="modal-overlay" id="aiDiffModal">
-  <div class="modal-box" style="max-width:320px;">
+  <div class="modal-box" style="max-width:340px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <h3 style="margin-bottom:0;">AI 난이도 선택</h3>
+      <h3 style="margin-bottom:0;">AI 대전 설정</h3>
       <button onclick="closeModal('aiDiffModal')" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
     </div>
+    <!-- 돌 색 선택 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:800;color:var(--accent2);margin-bottom:8px;">내 돌 색 선택</div>
+      <div style="display:flex;gap:8px;">
+        <button id="aiColorBlackBtn" onclick="selectAiColor('black')"
+          style="flex:1;padding:13px 8px;background:var(--ui-bg);border:2px solid var(--accent);border-radius:11px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .15s;">
+          <div style="width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#666,#111);"></div>
+          <div style="font-size:13px;font-weight:800;color:var(--text);">흑돌</div>
+          <div style="font-size:10px;color:var(--text3);">선공 (렌주룰 적용)</div>
+        </button>
+        <button id="aiColorWhiteBtn" onclick="selectAiColor('white')"
+          style="flex:1;padding:13px 8px;background:var(--ui-bg);border:2px solid var(--border2);border-radius:11px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .15s;">
+          <div style="width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ccc);border:1px solid #ccc;"></div>
+          <div style="font-size:13px;font-weight:800;color:var(--text);">백돌</div>
+          <div style="font-size:10px;color:var(--text3);">후공</div>
+        </button>
+      </div>
+    </div>
+    <!-- 난이도 선택 -->
+    <div style="font-size:12px;font-weight:800;color:var(--accent2);margin-bottom:8px;">AI 난이도</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="play-mode-btn" style="flex-direction:row;justify-content:space-between;padding:13px 16px;align-items:center;" onclick="closeModal('aiDiffModal');startClassicAiGame(2)">
         <div style="text-align:left;">
@@ -866,6 +893,9 @@ canvas#boardCanvas{display:block;touch-action:none;}
         착수
       </button>
     </div>
+    <div id="cSurrenderBtnWrap" style="width:100%;max-width:500px;">
+      <button id="cSurrenderBtn" onclick="cConfirmSurrender()" class="surrender-btn" style="display:none;">🏳 항복</button>
+    </div>
     <div class="status-bar" id="cStatusBar">게임을 시작합니다.</div>
     <!-- 온라인 채팅 -->
     <div id="cChatBox" style="display:none;width:100%;max-width:500px;background:var(--ui-bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
@@ -896,6 +926,17 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <div class="modal-btns">
         <button class="modal-btn cancel" onclick="closeModal('cQuitModal')">계속하기</button>
         <button class="modal-btn confirm" onclick="quitClassicGame()">나가기</button>
+      </div>
+    </div>
+  </div>
+  <!-- 항복 확인 모달 -->
+  <div class="modal-overlay" id="cSurrenderModal">
+    <div class="modal-box" id="cSurrenderModalBox">
+      <h3 style="color:var(--red);">항복</h3>
+      <p>정말로 항복하시겠습니까?<br>상대방의 승리로 게임이 종료됩니다.</p>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModal('cSurrenderModal')">계속하기</button>
+        <button class="modal-btn confirm" style="background:var(--red);" onclick="cDoSurrender()">항복</button>
       </div>
     </div>
   </div>
@@ -1159,6 +1200,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
           </div>
           <button class="merge-btn" id="bMergeBtn" onclick="doMerge('black')" disabled>합성 ▶</button>
           <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+          <button class="surrender-btn" id="bSurrenderBtn" onclick="confirmSurrender()" style="display:none;">🏳 항복</button>
         </div>
         <div class="action-section">
           <button class="action-btn use-card" id="bUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
@@ -1236,6 +1278,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
           </div>
           <button class="merge-btn" id="wMergeBtn" onclick="doMerge('white')" disabled>합성 ▶</button>
           <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+          <button class="surrender-btn" id="wSurrenderBtn" onclick="confirmSurrender()" style="display:none;">🏳 항복</button>
         </div>
         <div class="action-section">
           <button class="action-btn use-card" id="wUseCardBtn" onclick="triggerUseCard()" style="display:none;">능력 사용 ▶</button>
@@ -1292,7 +1335,21 @@ canvas#boardCanvas{display:block;touch-action:none;}
   <div class="win-box">
     <h2 id="winTitle">승리!</h2>
     <p id="winDesc"></p>
-    <button onclick="afterWin()">메인 메뉴로</button>
+    <div id="winBtns" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+      <button id="winReviewBtn" onclick="closeWinAndReview()" style="display:none;flex:1;min-width:100px;padding:10px;background:var(--ui-bg);color:var(--text);border:1.5px solid var(--border2);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">복기하기</button>
+      <button onclick="afterWin()" style="flex:1;min-width:100px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">메인 메뉴로</button>
+    </div>
+  </div>
+</div>
+<!-- SURRENDER CONFIRM -->
+<div class="modal-overlay" id="surrenderModal">
+  <div class="modal-box">
+    <h3>항복</h3>
+    <p>정말로 항복하시겠습니까?<br>상대방의 승리로 게임이 종료됩니다.</p>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal('surrenderModal')">계속하기</button>
+      <button class="modal-btn confirm" style="background:var(--red);" onclick="doSurrender()">항복</button>
+    </div>
   </div>
 </div>
 <!-- QUIT -->
@@ -2590,6 +2647,10 @@ function initGame(opts={}){
   document.getElementById('blackRecordDisplay').textContent='';
   document.getElementById('whiteRecordDisplay').textContent='';
   resizeBoard();startTimer();renderAll();showPlaceBtn(true);
+  // 항복 버튼 초기화
+  const reviewBtn=document.getElementById('winReviewBtn');if(reviewBtn)reviewBtn.style.display='none';
+  document.getElementById('winOverlay').classList.remove('show');
+  updateSurrenderBtns();
   setStatus('흑의 차례입니다. 판을 눌러 위치를 선택하거나 카드를 눌러 스킬을 사용하세요.');
 }
 function dealCards(p,n,star){const s=star!==undefined?star:getCardStarForTurn(turnCount);dealCardsSafe(p,n,s);}
@@ -3169,7 +3230,7 @@ function isFort(r,c){return (fortified[r+','+c]||0)>0;}
 function isExiled(r,c){return exiledCells[r+','+c]!==undefined;}
 
 // ── Render ────────────────────────────────────────────
-function renderAll(){drawBoard();renderHand('black');renderHand('white');updateTurnUI();}
+function renderAll(){drawBoard();renderHand('black');renderHand('white');updateTurnUI();updateSurrenderBtns();}
 function renderHand(player){
   const isActive=(player==='black'&&currentPlayer===1)||(player==='white'&&currentPlayer===2);
   const canAct=isOnlineGame?(onlineMyRole===player&&isMyTurn()):isActive;
@@ -3675,12 +3736,24 @@ function showWin(player,reason){
   const name=player===1?'흑 ('+gameNicknames.black+')':'백 ('+gameNicknames.white+')';
   if(isOnlineGame&&currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(player===myP);}
   if(isOnlineGame)onlineSyncAfterTurn();
+  // 항복 승리는 이펙트 없이 바로 승리창 표시
+  const isSurrender=reason&&reason.includes('항복');
+  if(isSurrender){
+    document.getElementById('winTitle').textContent=name+' 승리!';
+    document.getElementById('winDesc').textContent=reason;
+    const reviewBtn=document.getElementById('winReviewBtn');
+    if(reviewBtn)reviewBtn.style.display='flex';
+    document.getElementById('winOverlay').classList.add('show');
+    return;
+  }
   // 5목 이펙트 먼저 → 이후 승리창 표시
   const winCells=_lastWinCells||[];
   _lastWinCells=null;
   showWinCellEffect(winCells,player,()=>{
     document.getElementById('winTitle').textContent=name+' 승리!';
     document.getElementById('winDesc').textContent=reason||'5개를 연속으로 놓아 승리!';
+    const reviewBtn=document.getElementById('winReviewBtn');
+    if(reviewBtn)reviewBtn.style.display='none';
     showWinConfetti(player);
     document.getElementById('winOverlay').classList.add('show');
   });
@@ -3870,7 +3943,56 @@ function showWinConfetti(player){
     },i*22);
   }
 }
-function afterWin(){clearInterval(timerInterval);clearInterval(oppTimerInterval);timerInterval=null;if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;document.getElementById('winOverlay').classList.remove('show');stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
+function afterWin(){clearInterval(timerInterval);clearInterval(oppTimerInterval);timerInterval=null;if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;document.getElementById('winOverlay').classList.remove('show');stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
+
+// ── 복기하기 (전략적 오목) ─────────────────────────────────────
+function closeWinAndReview(){
+  document.getElementById('winOverlay').classList.remove('show');
+  setStatus('복기 중 — 판을 자유롭게 살펴보세요. 상단 나가기(←)로 메뉴로 돌아갑니다.');
+  drawBoard();
+}
+
+// ── 항복 (전략적 오목) ────────────────────────────────────────
+function updateSurrenderBtns(){
+  // 내 패널 항복 버튼만 표시 (게임 중, 미결정 상태에서)
+  const bBtn=document.getElementById('bSurrenderBtn');
+  const wBtn=document.getElementById('wSurrenderBtn');
+  if(!bBtn||!wBtn)return;
+  if(winnerDetermined){bBtn.style.display='none';wBtn.style.display='none';return;}
+  if(isOnlineGame){
+    // 온라인: 내 역할 패널에만 표시
+    if(onlineMyRole==='black'){bBtn.style.display='block';wBtn.style.display='none';}
+    else if(onlineMyRole==='white'){bBtn.style.display='none';wBtn.style.display='block';}
+    else{bBtn.style.display='none';wBtn.style.display='none';}
+  }else{
+    // 로컬: 현재 턴인 플레이어 패널에만 표시
+    bBtn.style.display=currentPlayer===1?'block':'none';
+    wBtn.style.display=currentPlayer===2?'block':'none';
+  }
+}
+function confirmSurrender(){
+  if(winnerDetermined)return;
+  document.getElementById('surrenderModal').classList.add('show');
+}
+function doSurrender(){
+  closeModal('surrenderModal');
+  if(winnerDetermined)return;
+  // 내가 항복 → 상대 승리
+  const myPlayer=isOnlineGame?(onlineMyRole==='black'?1:2):currentPlayer;
+  const oppPlayer=myPlayer===1?2:1;
+  const myName=myPlayer===1?gameNicknames.black:gameNicknames.white;
+  const oppName=oppPlayer===1?gameNicknames.black:gameNicknames.white;
+  // 온라인이면 Firebase에 항복 신호 전달
+  if(isOnlineGame&&db&&onlineRoomId){
+    db.ref('rooms/'+onlineRoomId+'/surrender').set({by:onlineMyRole,ts:Date.now()});
+  }
+  // 전적 처리
+  if(isOnlineGame&&currentUser){recordResult(false);}
+  showWin(oppPlayer,oppName+'님이 '+myName+'님의 항복으로 승리!');
+}
+
+// 항복 버튼 표시 상태 업데이트 (renderAll에서 호출)
+function renderSurrenderBtn(){updateSurrenderBtns();}
 
 // ── End turn ──────────────────────────────────────────
 // endTurn: 현재 플레이어 턴 종료 처리
@@ -4323,6 +4445,20 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
   // 채팅 초기화
   initChat(code,role);
 
+  // 항복 리스너: 상대방이 항복하면 내가 이김
+  db.ref('rooms/'+code+'/surrender').on('value',snap=>{
+    const d=snap.val();
+    if(!d||!d.by)return;
+    if(d.by===role)return; // 내가 항복한 건 doSurrender()에서 이미 처리
+    if(winnerDetermined)return;
+    const myPlayer=role==='black'?1:2;
+    const myName=role==='black'?gameNicknames.black:gameNicknames.white;
+    const oppRole=role==='black'?'white':'black';
+    const oppName=role==='black'?gameNicknames.white:gameNicknames.black;
+    if(currentUser)recordResult(true);
+    showWin(myPlayer,myName+'님이 '+oppName+'님의 항복으로 승리!');
+  });
+
   // gameState 리스너: 흑이 push할 때마다 백이 수신
   db.ref('rooms/'+code+'/gameState').on('value',snap=>{
     const val=snap.val();
@@ -4414,7 +4550,7 @@ function onlineSyncAfterTurn(){
 // ══════════════════════════════════════════════════════
 const C_BS=15, C_TIMER_MAX=45;
 let cBoard, cCurrentPlayer, cWinnerDetermined;
-let cIsAiGame=false, cAiDepth=4, cAiThinking=false;
+let cIsAiGame=false, cAiDepth=4, cAiThinking=false, cAiPlayer=2; // cAiPlayer: AI가 쓰는 플레이어 번호 (1=흑, 2=백)
 let cIsOnline=false, cRoomId=null, cMyRole=null, cNicknames={black:'흑',white:'백'};
 let cTimerInterval=null, cTimerLeft=C_TIMER_MAX;
 let cOppTimerInterval=null;
@@ -4437,6 +4573,7 @@ function initClassicGame(opts={}){
   if(opts.nicknames)cNicknames=opts.nicknames;
   cBoard=Array.from({length:C_BS},()=>new Array(C_BS).fill(0));
   cCurrentPlayer=1;cWinnerDetermined=false;cAiThinking=false;cSelectedCell=null;cLastMove=null;cWinStones=[];
+  if(!opts.aiGame){cAiPlayer=2;} // 기본값: AI는 백
   if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
   if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
   function cGlowLoop(){cDrawBoard();cGlowAnim=requestAnimationFrame(cGlowLoop);}
@@ -4454,10 +4591,18 @@ function initClassicGame(opts={}){
   cResizeBoard();
   cInitBoardEvents();
   cUpdateTurnUI();
-  cStartTimer();
-  if(cIsOnline&&cMyRole==='white'){
+  cUpdateSurrenderBtn();
+  // AI가 흑(선공)인 경우 즉시 AI 착수
+  if(cIsAiGame&&cAiPlayer===1){
+    cSetStatus('AI가 생각 중...');
     clearInterval(cTimerInterval);
-    cSetStatus('흑(상대)의 차례입니다. 대기 중...');
+    setTimeout(()=>cAiMove(),400);
+  } else {
+    cStartTimer();
+    if(cIsOnline&&cMyRole==='white'){
+      clearInterval(cTimerInterval);
+      cSetStatus('흑(상대)의 차례입니다. 대기 중...');
+    }
   }
 }
 
@@ -4540,13 +4685,36 @@ function cDrawBoard(){
       ctx.strokeStyle=cCurrentPlayer===1?'#ffcc00':'#ffcc00';ctx.lineWidth=3;ctx.stroke();
     }
   }
+  // 렌주룰 금수 표시 (흑 차례일 때, 빈 칸 위에 X 표시)
+  if(cCurrentPlayer===1){
+    for(let rr=0;rr<C_BS;rr++)for(let cc=0;cc<C_BS;cc++){
+      if(cBoard[rr][cc]!==0)continue;
+      if(!cIsRenjuForbidden(rr,cc,cBoard))continue;
+      const x=OFF+cc*CS, y=OFF+rr*CS, half=CS*0.24;
+      ctx.strokeStyle='rgba(198,40,40,0.70)';
+      ctx.lineWidth=CS*0.09;
+      ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(x-half,y-half);ctx.lineTo(x+half,y+half);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+half,y-half);ctx.lineTo(x-half,y+half);ctx.stroke();
+      // 작은 원
+      ctx.beginPath();ctx.arc(x,y,half*1.1,0,Math.PI*2);
+      ctx.strokeStyle='rgba(198,40,40,0.40)';ctx.lineWidth=CS*0.055;ctx.stroke();
+    }
+  }
   // 호버 (온라인에서 내 차례 아닐 때 안 보임)
   if(cHoverCell&&(cIsMyClassicTurn())&&!(cSelectedCell&&cSelectedCell.r===cHoverCell.r&&cSelectedCell.c===cHoverCell.c)){
     const{r,c}=cHoverCell;
     if(cBoard[r][c]===0){
       const x=OFF+c*CS, y=OFF+r*CS, R=CS*0.44;
-      ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);
-      ctx.fillStyle=cCurrentPlayer===1?'rgba(30,30,30,0.35)':'rgba(240,240,240,0.5)';ctx.fill();
+      // 금수 위치 호버 시 빨간 미리보기
+      if(cCurrentPlayer===1&&cIsRenjuForbidden(r,c,cBoard)){
+        ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);
+        ctx.fillStyle='rgba(198,40,40,0.25)';ctx.fill();
+        ctx.strokeStyle='rgba(198,40,40,0.8)';ctx.lineWidth=2;ctx.stroke();
+      }else{
+        ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);
+        ctx.fillStyle=cCurrentPlayer===1?'rgba(30,30,30,0.35)':'rgba(240,240,240,0.5)';ctx.fill();
+      }
     }
   }
 }
@@ -4583,6 +4751,11 @@ function cInitBoardEvents(){
       cSetStatus(cCurrentPlayer===1?'흑의 차례입니다. 보드를 클릭해 착수하세요.':'백의 차례입니다. 보드를 클릭해 착수하세요.');
       cDrawBoard();return;
     }
+    // 금수 칸 클릭 시 경고 (플레이어가 흑인 경우)
+    if(cCurrentPlayer===1&&cIsRenjuForbidden(r,c,cBoard)){
+      cSetStatus('금수입니다! 3-3/4-4/장목은 착수할 수 없습니다.');
+      cDrawBoard();return;
+    }
     cSelectedCell={r,c};
     cDrawBoard();
     const btn=document.getElementById('cPlaceBtnWrap');
@@ -4592,7 +4765,7 @@ function cInitBoardEvents(){
   // 터치 끝 — 호버 반드시 초기화 후 선택 처리
   cv.ontouchend=e=>{
     e.preventDefault();
-    cHoverCell=null; // 터치 끝나면 호버 흔적 제거
+    cHoverCell=null;
     if(cAiThinking||!cIsMyClassicTurn()||cWinnerDetermined){cDrawBoard();return;}
     const{r,c}=cGetCell(e);
     if(r<0||r>=C_BS||c<0||c>=C_BS){cDrawBoard();return;}
@@ -4602,6 +4775,11 @@ function cInitBoardEvents(){
       const btn=document.getElementById('cPlaceBtnWrap');
       if(btn)btn.style.display='none';
       cSetStatus(cCurrentPlayer===1?'흑의 차례입니다. 보드를 클릭해 착수하세요.':'백의 차례입니다. 보드를 클릭해 착수하세요.');
+      cDrawBoard();return;
+    }
+    // 금수 칸 터치 시 경고 (플레이어가 흑인 경우)
+    if(cCurrentPlayer===1&&cIsRenjuForbidden(r,c,cBoard)){
+      cSetStatus('금수입니다! 3-3/4-4/장목은 착수할 수 없습니다.');
       cDrawBoard();return;
     }
     cSelectedCell={r,c};
@@ -4633,6 +4811,10 @@ function cGetCell(e){
   return{r,c};
 }
 function cIsMyClassicTurn(){
+  if(cIsAiGame){
+    // AI 대전: AI 차례면 false, 플레이어 차례면 true
+    return cCurrentPlayer!==cAiPlayer;
+  }
   if(!cIsOnline)return true;
   return(cMyRole==='black'&&cCurrentPlayer===1)||(cMyRole==='white'&&cCurrentPlayer===2);
 }
@@ -4755,7 +4937,8 @@ function cShowWin(player){
   const name=player===1?'흑 ('+cNicknames.black+')':'백 ('+cNicknames.white+')';
   document.getElementById('cWinTitle').textContent=name+' 승리!';
   if(cIsAiGame){
-    document.getElementById('cWinDesc').textContent=player===1?'축하합니다! AI를 이겼습니다! 🎉':'AI가 이겼습니다. 다시 도전해보세요!';
+    const playerWon=(player!==cAiPlayer);
+    document.getElementById('cWinDesc').textContent=playerWon?'축하합니다! AI를 이겼습니다! 🎉':'AI가 이겼습니다. 다시 도전해보세요!';
   }else{
     document.getElementById('cWinDesc').textContent='5개를 연속으로 놓아 승리!';
   }
@@ -4771,14 +4954,12 @@ function cShowWin(player){
     if(!cWinAnimStart)cWinAnimStart=ts;
     const elapsed=ts-cWinAnimStart;
     cDrawWinAnim(player,elapsed);
-    // 각 돌 0.22s 간격, 마지막 돌 후 0.6s 뒤 오버레이
     const totalDur=cWinStones.length*220+600;
     if(elapsed<totalDur){
       cWinAnimFrame=requestAnimationFrame(winAnimLoop);
     }else{
       cWinAnimFrame=null;
       document.getElementById('cWinOverlay').classList.add('show');
-      // 오버레이 뜬 후에도 마지막 돌 글로우 유지
       cStartGlowLoop();
     }
   }
@@ -4845,13 +5026,80 @@ function afterClassicWin(){
   else if(currentUserData)showMenuWithUser();
   else showPage('page-menu');
 }
-function openAiDiffModal(){document.getElementById('aiDiffModal').classList.add('show');}
+
+// ── 클래식 오목 항복 ──────────────────────────────────────
+function cUpdateSurrenderBtn(){
+  const btn=document.getElementById('cSurrenderBtn');
+  if(!btn)return;
+  if(cWinnerDetermined){btn.style.display='none';return;}
+  if(cIsOnline){
+    btn.style.display=cIsMyClassicTurn()?'block':'none';
+  }else if(cIsAiGame){
+    // AI 대전: 플레이어 차례일 때만 표시
+    btn.style.display=(cCurrentPlayer!==cAiPlayer&&!cAiThinking)?'block':'none';
+  }else{
+    btn.style.display='block';
+  }
+}
+function cConfirmSurrender(){
+  if(cWinnerDetermined)return;
+  document.getElementById('cSurrenderModal').classList.add('show');
+}
+function cDoSurrender(){
+  closeModal('cSurrenderModal');
+  if(cWinnerDetermined)return;
+  // 항복하는 쪽 결정
+  let surrenderPlayer;
+  if(cIsOnline){surrenderPlayer=cMyRole==='black'?1:2;}
+  else if(cIsAiGame){surrenderPlayer=cAiPlayer===1?2:1;} // 플레이어가 항복
+  else{surrenderPlayer=cCurrentPlayer;}
+  const oppPlayer=surrenderPlayer===1?2:1;
+  const surrenderName=surrenderPlayer===1?cNicknames.black:cNicknames.white;
+  const oppName=oppPlayer===1?cNicknames.black:cNicknames.white;
+  // 온라인이면 Firebase에 항복 신호
+  if(cIsOnline&&db&&cRoomId){
+    db.ref('rooms/'+cRoomId+'/cSurrender').set({by:cMyRole,ts:Date.now()});
+  }
+  // 전적 처리
+  if(cIsOnline&&currentUser){recordResult(false);}
+  // 승리창 (이펙트 없이 바로)
+  cWinnerDetermined=true;
+  clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
+  document.getElementById('cWinTitle').textContent=oppName+' 승리!';
+  document.getElementById('cWinDesc').textContent=cIsAiGame?'AI가 이겼습니다. 다시 도전해보세요!':oppName+'님이 '+surrenderName+'님의 항복으로 승리!';
+  document.getElementById('cWinOverlay').classList.add('show');
+}
+// AI 돌 색 선택 (기본값: 플레이어=흑, AI=백)
+let _aiChosenColor='black'; // 플레이어가 선택한 색
+function selectAiColor(color){
+  _aiChosenColor=color;
+  const bk=document.getElementById('aiColorBlackBtn');
+  const wh=document.getElementById('aiColorWhiteBtn');
+  if(bk){bk.style.borderColor=color==='black'?'var(--accent)':'var(--border2)';}
+  if(wh){wh.style.borderColor=color==='white'?'var(--accent)':'var(--border2)';}
+}
+function openAiDiffModal(){
+  _aiChosenColor='black';
+  // 버튼 상태 초기화
+  const bk=document.getElementById('aiColorBlackBtn');
+  const wh=document.getElementById('aiColorWhiteBtn');
+  if(bk)bk.style.borderColor='var(--accent)';
+  if(wh)wh.style.borderColor='var(--border2)';
+  document.getElementById('aiDiffModal').classList.add('show');
+}
 
 function startClassicAiGame(depth){
-  cIsAiGame=true; cAiDepth=depth; cIsOnline=false; cRoomId=null; cMyRole='black';
+  cIsAiGame=true; cAiDepth=depth; cIsOnline=false; cRoomId=null;
+  const playerIsBlack=(_aiChosenColor==='black');
+  cMyRole=playerIsBlack?'black':'white';
+  cAiPlayer=playerIsBlack?2:1; // AI가 사용하는 플레이어 번호
   const nick=currentUserData?currentUserData.nickname:'플레이어';
   const diffName={2:'초보',4:'중수',6:'고수',8:'전문가'}[depth]||'AI';
-  cNicknames={black:nick+'(흑)', white:'AI '+diffName+'(백)'};
+  if(playerIsBlack){
+    cNicknames={black:nick+'(흑)', white:'AI '+diffName+'(백)'};
+  }else{
+    cNicknames={black:'AI '+diffName+'(흑)', white:nick+'(백)'};
+  }
   showPage('page-classic-game');
   initClassicGame({aiGame:true});
 }
@@ -4876,12 +5124,15 @@ function cAiCandidates(bd){
   return result;
 }
 
-// 한 방향 연속 돌 + 열림 카운트
+// 한 방향 연속 돌 + 양쪽 끝 열림 정확히 구분 (openL/openR 각각 0/1, openBoth=양쪽 다 열렸는지)
 function cAiLine(bd,r,c,dr,dc,p){
-  const sz=C_BS; let cnt=1,open=0;
-  for(let i=1;i<6;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=sz||nc<0||nc>=sz)break;if(bd[nr][nc]===p)cnt++;else{if(!bd[nr][nc])open++;break;}}
-  for(let i=1;i<6;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=sz||nc<0||nc>=sz)break;if(bd[nr][nc]===p)cnt++;else{if(!bd[nr][nc])open++;break;}}
-  return{cnt,open};
+  const sz=C_BS; let cnt=1;
+  let openR=0,blockedR=0; // 정방향(앞)
+  for(let i=1;i<6;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=sz||nc<0||nc>=sz){blockedR=1;break;}if(bd[nr][nc]===p)cnt++;else{if(!bd[nr][nc])openR=1;else blockedR=1;break;}}
+  let openL=0,blockedL=0; // 역방향(뒤)
+  for(let i=1;i<6;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=sz||nc<0||nc>=sz){blockedL=1;break;}if(bd[nr][nc]===p)cnt++;else{if(!bd[nr][nc])openL=1;else blockedL=1;break;}}
+  const open=openL+openR; // 기존 코드와의 호환을 위해 합계도 유지(0~2)
+  return{cnt,open,openL,openR,openBoth:(openL&&openR)?1:0};
 }
 
 // 점수 평가
@@ -4892,11 +5143,23 @@ function cAiEval(bd,p){
   for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
     if(!bd[r][c]) continue;
     const cur=bd[r][c], sign=cur===p?1:-2.2;
+    let strongCount=0; // 이 칸에서 동시에 발생하는 "열린3 이상" 라인 개수 (이중위협 탐지용)
     for(const[dr,dc]of C_AI_DIRS){
-      const{cnt,open}=cAiLine(bd,r,c,dr,dc,cur);
+      const{cnt,open,openBoth}=cAiLine(bd,r,c,dr,dc,cur);
       if(cnt>=5){score+=sign*S[5];continue;}
+      if(cnt===4&&openBoth){
+        // 열린4: 양쪽이 다 열려 있으면 상대가 한 번에 못 막음 → 승리급
+        score+=sign*S[5]*0.9;
+        strongCount++;
+        continue;
+      }
       if(S[cnt]) score+=sign*(S[cnt][open]||0);
+      if(cnt===3&&open>=1) strongCount++;
+      if(cnt===4) strongCount++;
     }
+    // 이중위협 보너스: 같은 칸이 동시에 2개 이상의 강한 라인(열린3/4)을 만들면
+    // 상대가 한 수로 둘 다 막을 수 없으므로 큰 가중치 부여
+    if(strongCount>=2) score+=sign*S[4][2]*1.5;
     if(bd[r][c]===p) score+=Math.max(0,3-Math.max(Math.abs(r-mid),Math.abs(c-mid)));
   }
   return score;
@@ -4917,12 +5180,18 @@ function cAiCheckWin(bd,r,c,p){
 function cAiQuickScore(bd,r,c,p){
   const opp=p===1?2:1, sz=C_BS, mid=Math.floor(sz/2); let s=0;
   const S={5:1e7,4:{2:1e5,1:1e3},3:{2:1e4,1:500},2:{2:200,1:20}};
+  let myStrong=0,oppStrong=0;
   for(const[dr,dc]of C_AI_DIRS){
-    bd[r][c]=p; const{cnt:c1,open:o1}=cAiLine(bd,r,c,dr,dc,p); bd[r][c]=0;
-    bd[r][c]=opp; const{cnt:c2,open:o2}=cAiLine(bd,r,c,dr,dc,opp); bd[r][c]=0;
-    s+=(c1>=5?S[5]:(S[c1]?S[c1][o1]||0:0));
-    s+=(c2>=5?S[5]:(S[c2]?S[c2][o2]||0:0))*1.2;
+    bd[r][c]=p; const{cnt:c1,open:o1,openBoth:b1}=cAiLine(bd,r,c,dr,dc,p); bd[r][c]=0;
+    bd[r][c]=opp; const{cnt:c2,open:o2,openBoth:b2}=cAiLine(bd,r,c,dr,dc,opp); bd[r][c]=0;
+    if(c1===4&&b1){s+=S[5]*0.9;myStrong++;}
+    else{s+=(c1>=5?S[5]:(S[c1]?S[c1][o1]||0:0));if(c1===3&&o1>=1)myStrong++;if(c1===4)myStrong++;}
+    if(c2===4&&b2){s+=S[5]*0.9*1.2;oppStrong++;}
+    else{s+=(c2>=5?S[5]:(S[c2]?S[c2][o2]||0:0))*1.2;if(c2===3&&o2>=1)oppStrong++;if(c2===4)oppStrong++;}
   }
+  // 이중위협 보너스: 이 칸에 두면 내가 동시에 여러 위협을 만들거나, 상대의 이중위협을 막는 경우
+  if(myStrong>=2) s+=S[4][2]*1.5;
+  if(oppStrong>=2) s+=S[4][2]*1.5*1.2;
   // 중앙에 가까울수록 약간 유리 (타이브레이킹)
   s+=Math.max(0,4-Math.max(Math.abs(r-mid),Math.abs(c-mid)))*3;
   return s;
@@ -4937,13 +5206,16 @@ function cAiSortCands(bd,cands,p){
 }
 
 // 미니맥스 + 알파베타
-// 난이도별 실제 탐색 깊이: 전문가=4, 고수=3, 중수=2, 초보=1
+// 난이도별 실제 탐색 깊이: 전문가=5, 고수=4, 중수=2, 초보=1
 function cMinimax(bd,depth,alpha,beta,isMax,aiP){
   const p=isMax?aiP:(aiP===1?2:1);
-  const cands=cAiCandidates(bd);
+  const allCands=cAiCandidates(bd);
+  // 흑(p===1)이면 금수 제외
+  const cands=p===1?allCands.filter(([r,c])=>!cIsRenjuForbidden(r,c,bd)):allCands;
+  const useCands=cands.length>0?cands:allCands;
   if(depth===0) return cAiEval(bd,aiP);
-  const limit=depth>=3?6:depth===2?8:12;
-  const sorted=cAiSortCands(bd,cands,p);
+  const limit=depth>=4?5:depth===3?6:depth===2?8:12;
+  const sorted=cAiSortCands(bd,useCands,p);
   const top=sorted.slice(0,limit);
   if(isMax){
     let best=-Infinity;
@@ -4970,17 +5242,55 @@ function cMinimax(bd,depth,alpha,beta,isMax,aiP){
   }
 }
 
+// 이 위치에 두면 "열린4"(양쪽 다 열린 4)가 생기는지 확인 → 다음 수에 상대가 못 막는 강제승리수
+function cAiMakesOpenFour(bd,r,c,p){
+  bd[r][c]=p;
+  let found=false;
+  for(const[dr,dc]of C_AI_DIRS){
+    const{cnt,openBoth}=cAiLine(bd,r,c,dr,dc,p);
+    if(cnt===4&&openBoth){found=true;break;}
+  }
+  bd[r][c]=0;
+  return found;
+}
+// 이 위치에 두면 "더블쓰리"(열린3 이상 라인이 동시에 2개 이상) 또는 닫힌4+열린3 복합위협이 생기는지 확인
+function cAiMakesDoubleThreat(bd,r,c,p){
+  bd[r][c]=p;
+  let strong=0;
+  for(const[dr,dc]of C_AI_DIRS){
+    const{cnt,open,openBoth}=cAiLine(bd,r,c,dr,dc,p);
+    if(cnt===4&&openBoth){strong+=2;continue;}
+    if(cnt===4&&open>=1)strong++;
+    if(cnt===3&&open>=1)strong++;
+  }
+  bd[r][c]=0;
+  return strong>=2;
+}
+
 // AI 최선의 수 계산
 function cAiBestMove(bd,aiP,depth){
-  const realDepth={8:4,6:3,4:2,2:1}[depth]||2;
-  const cands=cAiCandidates(bd);
+  const realDepth={8:5,6:4,4:2,2:1}[depth]||2;
   const opp=aiP===1?2:1;
-  // 즉시 승리
-  for(const[r,c]of cands){bd[r][c]=aiP;if(cAiCheckWin(bd,r,c,aiP)){bd[r][c]=0;return[r,c];}bd[r][c]=0;}
-  // 즉시 막기
-  for(const[r,c]of cands){bd[r][c]=opp;if(cAiCheckWin(bd,r,c,opp)){bd[r][c]=0;return[r,c];}bd[r][c]=0;}
-  const sorted=cAiSortCands(bd,cands,aiP);
-  const topLimit={8:10,6:8,4:6,2:5}[depth]||8;
+  // 흑(aiP===1)이면 금수 제외 필터
+  const isForbidden=(r,c)=>aiP===1&&cIsRenjuForbidden(r,c,bd);
+  const allCands=cAiCandidates(bd);
+  const cands=allCands.filter(([r,c])=>!isForbidden(r,c));
+  const useCands=cands.length>0?cands:allCands; // 모든 칸이 금수면 fallback
+  // 즉시 승리 (1수 완성)
+  for(const[r,c]of useCands){bd[r][c]=aiP;if(cAiCheckWin(bd,r,c,aiP)){bd[r][c]=0;return[r,c];}bd[r][c]=0;}
+  // 즉시 막기 (상대가 1수로 완성하는 경우)
+  // 상대 완성수도 금수가 아닌 위치만 막을 필요 있음 (하지만 막기는 어디든 가능)
+  for(const[r,c]of allCands){bd[r][c]=opp;if(cAiCheckWin(bd,r,c,opp)){bd[r][c]=0;if(!isForbidden(r,c))return[r,c];}bd[r][c]=0;}
+  // 고수/전문가(depth>=6): 강제수까지 인식
+  if(depth>=6){
+    for(const[r,c]of useCands){if(cAiMakesOpenFour(bd,r,c,aiP))return[r,c];}
+    // 상대가 두면 열린4가 생기는 칸 → 반드시 막음
+    for(const[r,c]of allCands){if(cAiMakesOpenFour(bd,r,c,opp)&&!isForbidden(r,c))return[r,c];}
+    for(const[r,c]of useCands){if(cAiMakesDoubleThreat(bd,r,c,aiP))return[r,c];}
+    for(const[r,c]of allCands){if(cAiMakesDoubleThreat(bd,r,c,opp)&&!isForbidden(r,c))return[r,c];}
+  }
+  const sorted=cAiSortCands(bd,useCands,aiP);
+  const topLimit={8:14,6:11,4:6,2:5}[depth]||8;
   const top=sorted.slice(0,topLimit);
   let bestScore=-Infinity, bestMove=null;
   for(const[r,c]of top){
@@ -4989,17 +5299,17 @@ function cAiBestMove(bd,aiP,depth){
     bd[r][c]=0;
     if(v>bestScore||(v===bestScore&&Math.random()<0.15)){bestScore=v;bestMove=[r,c];}
   }
-  return bestMove||top[0];
+  return bestMove||top[0]||useCands[0];
 }
 
 // AI 착수 실행
 function cAiMove(){
-  if(!cIsAiGame||cWinnerDetermined||cCurrentPlayer!==2) return;
+  if(!cIsAiGame||cWinnerDetermined||cCurrentPlayer!==cAiPlayer) return;
   cAiThinking=true;
   cSetStatus('AI가 생각 중...');
   setTimeout(()=>{
     const bd=cBoard.map(row=>[...row]);
-    const[r,c]=cAiBestMove(bd,2,cAiDepth);
+    const[r,c]=cAiBestMove(bd,cAiPlayer,cAiDepth);
     cAiThinking=false;
     cPlaceStone(r,c);
   },30);
@@ -5011,6 +5321,7 @@ function cEndTurn(){
   const btn=document.getElementById('cPlaceBtnWrap');if(btn)btn.style.display='none';
   cCurrentPlayer=cCurrentPlayer===1?2:1;
   cUpdateTurnUI();
+  cUpdateSurrenderBtn();
   if(cIsOnline){
     if(!cIsMyClassicTurn()){
       clearInterval(cTimerInterval);
@@ -5018,7 +5329,7 @@ function cEndTurn(){
       return;
     }
   }
-  if(cIsAiGame&&cCurrentPlayer===2){
+  if(cIsAiGame&&cCurrentPlayer===cAiPlayer){
     clearInterval(cTimerInterval);
     cAiMove();
     return;
@@ -5033,8 +5344,17 @@ function cUpdateTurnUI(){
   // 플레이어 정보 박스 하이라이트
   document.getElementById('cBlackInfo').style.borderColor=cCurrentPlayer===1?'var(--accent)':'var(--border)';
   document.getElementById('cWhiteInfo').style.borderColor=cCurrentPlayer===2?'var(--accent)':'var(--border)';
-  if(!cIsOnline||cIsMyClassicTurn())
+  if(cIsAiGame){
+    if(cCurrentPlayer===cAiPlayer){
+      // AI 차례 - cAiMove 내부에서 상태 메시지 설정
+    }else{
+      const isBlack=cCurrentPlayer===1;
+      const renjuHint=isBlack?' (금수 주의)':'';
+      cSetStatus((isBlack?'흑':'백')+'의 차례입니다. 보드를 클릭해 착수하세요.'+renjuHint);
+    }
+  }else if(!cIsOnline||cIsMyClassicTurn()){
     cSetStatus(cCurrentPlayer===1?'흑의 차례입니다. 보드를 클릭해 착수하세요.':'백의 차례입니다. 보드를 클릭해 착수하세요.');
+  }
 }
 function cSetStatus(msg){const el=document.getElementById('cStatusBar');if(el)el.textContent=msg;}
 
@@ -5313,6 +5633,22 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
   }
   // 채팅
   cInitChat(code,role);
+  // 항복 리스너
+  db.ref('rooms/'+code+'/cSurrender').on('value',snap=>{
+    const d=snap.val();
+    if(!d||!d.by)return;
+    if(d.by===role)return; // 내가 항복한 건 cDoSurrender()에서 이미 처리
+    if(cWinnerDetermined)return;
+    const myPlayer=role==='black'?1:2;
+    const myName=role==='black'?cNicknames.black:cNicknames.white;
+    const oppName=role==='black'?cNicknames.white:cNicknames.black;
+    if(currentUser)recordResult(true);
+    cWinnerDetermined=true;
+    clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
+    document.getElementById('cWinTitle').textContent=myName+' 승리!';
+    document.getElementById('cWinDesc').textContent=myName+'님이 '+oppName+'님의 항복으로 승리!';
+    document.getElementById('cWinOverlay').classList.add('show');
+  });
   // 타이머 리스너
   db.ref('rooms/'+code+'/cTimerTs').on('value',snap=>{
     const d=snap.val();if(!d)return;
@@ -5332,7 +5668,7 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
     // 내가 push한 건 무시
     if(val.pushedBy===role)return;
     cDeserialize(val.data);
-    cResizeBoard();cDrawBoard();cUpdateTurnUI();
+    cResizeBoard();cDrawBoard();cUpdateTurnUI();cUpdateSurrenderBtn();
     if(cWinnerDetermined){
       const wp=JSON.parse(val.data).winner;
       if(wp&&!document.getElementById('cWinOverlay').classList.contains('show')){
@@ -5404,7 +5740,7 @@ function cCleanupOnline(){
   clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
   if(cChatListener&&db&&cRoomId)db.ref('rooms/'+cRoomId+'/cChat').off('child_added',cChatListener);
   if(cRoomId&&db){
-    try{db.ref('rooms/'+cRoomId).off();db.ref('rooms/'+cRoomId+'/cState').off();db.ref('rooms/'+cRoomId+'/cTimerTs').off();db.ref('rooms/'+cRoomId+'/cChat').off();}catch(e){}
+    try{db.ref('rooms/'+cRoomId).off();db.ref('rooms/'+cRoomId+'/cState').off();db.ref('rooms/'+cRoomId+'/cTimerTs').off();db.ref('rooms/'+cRoomId+'/cChat').off();db.ref('rooms/'+cRoomId+'/cSurrender').off();}catch(e){}
   }
   cRoomId=null;cMyRole=null;cChatListener=null;
 }
