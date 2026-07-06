@@ -10,6 +10,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<!-- Google AdSense — ca-pub 발행자 ID를 본인 것으로 교체하세요 -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 <style>
 :root{--bg:#f5f3ef;--bg2:#eceae4;--board-bg:#c8a96e;--ui-bg:#ffffff;--border:#d8d2c8;--border2:#b8b0a0;--panel:#fafaf8;--text:#1a1814;--text2:#6b6358;--text3:#a09888;--accent:#b8860b;--accent2:#8b5e0a;--red:#c62828;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -129,6 +131,18 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .menu-user-bar{width:100%;background:var(--ui-bg);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:11px;}
 .menu-user-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0;}
 .menu-user-name{font-weight:700;font-size:14px;}
+.notice-item{background:var(--panel);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;}
+.notice-item-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.notice-item-title{font-size:14px;font-weight:800;color:var(--text);}
+.notice-item-date{font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0;}
+.notice-item-tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;flex-shrink:0;}
+.notice-item-body{font-size:12.5px;color:var(--text2);line-height:1.65;white-space:pre-line;}
+.notice-empty{text-align:center;padding:30px 0;color:var(--text3);font-size:13px;}
+.menu-notice-dot{position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+.ad-slot{width:100%;max-width:420px;min-height:90px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.ad-slot ins{width:100%;}
+#page-auth .ad-slot{margin-top:18px;}
+#page-menu .ad-slot{margin-top:auto;padding:14px 20px 20px;align-self:center;}
 .menu-user-record{font-size:12px;color:var(--text3);margin-top:1px;}
 .menu-logout-btn{background:none;border:1px solid var(--border2);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text2);margin-left:auto;}
 .menu-btn{width:100%;padding:14px;border:none;border-radius:11px;font-size:15px;font-weight:700;letter-spacing:1px;}
@@ -530,6 +544,10 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <span style="color:rgba(255,255,255,0.1);font-size:12px;line-height:1.8;">|</span>
       <button class="auth-footer-link" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSf9Gesp6N2e20o2ndN1q2KLFDWUeIFAPMqe51D8KrTlqNSm_g/viewform?usp=publish-editor','_blank')">건의사항</button>
     </div>
+    <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
   </div>
 </div>
 <!-- EMAIL VERIFY MODAL -->
@@ -606,6 +624,16 @@ canvas#boardCanvas{display:block;touch-action:none;}
     <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px;">또는 직접 이메일 : <a href="mailto:okayt10293@gmail.com" style="color:var(--accent);text-decoration:none;">okayt10293@gmail.com</a></p>
   </div>
 </div>
+
+<!-- NOTICE MODAL -->
+<div class="modal-overlay" id="noticeModal">
+  <div class="modal-box" style="max-width:400px;position:relative;">
+    <button onclick="closeModal('noticeModal')" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    <h3 style="margin-bottom:12px;">공지사항</h3>
+    <div id="noticeListWrap" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding-right:2px;"></div>
+  </div>
+</div>
+
 
 <!-- SUGGESTION MODAL -->
 <div class="modal-overlay" id="suggestionModal">
@@ -953,6 +981,11 @@ canvas#boardCanvas{display:block;touch-action:none;}
         </div>
       </div>
       <div class="menu-small-col">
+        <button class="menu-small-btn" id="menuNoticeBtn" onclick="openNoticeModal()" style="position:relative;">
+          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 0 1-3.2 2.4"/></svg></span>
+          공지사항
+          <span class="menu-notice-dot" id="menuNoticeDot"></span>
+        </button>
         <button class="menu-small-btn social" id="menuFriendsBtn" onclick="openFriendsPage()" style="display:none;">
           <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="17" cy="8" r="2.5"/><path d="M21.5 21v-1a4.5 4.5 0 0 0-3-4.24"/></svg></span>
           소셜<span class="menu-card-badge" id="menuFriendsBadge" style="display:none;"></span>
@@ -983,6 +1016,10 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <button class="menu-btn primary" onclick="document.getElementById('playModeModal').classList.add('show');filterPlayModeModal('strategic')" style="padding:18px;font-size:18px;">전략적 오목 플레이</button>
       <button class="menu-btn secondary" onclick="document.getElementById('playModeModal').classList.add('show');filterPlayModeModal('classic')" style="padding:14px;font-size:16px;">클래식 오목 플레이</button>
     </div>
+  </div>
+  <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
   </div>
 </div>
 <!-- SETTINGS -->
@@ -2320,7 +2357,7 @@ function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if(id==='page-book')renderBook();
-  if(id==='page-menu'){drawMenuBoard();closePlayModeModal();}
+  if(id==='page-menu'){drawMenuBoard();closePlayModeModal();pushAdsIn('page-menu');}
   if(id==='page-online'){
     switchLobbyTab('wait');
     startLobbyListener();
@@ -2332,6 +2369,15 @@ function showPage(id){
   }
 }
 function closeModal(id){document.getElementById(id).classList.remove('show');}
+// 광고 슬롯 초기화 — 페이지가 실제로 보여질 때(너비>0) 한 번만 push
+function pushAdsIn(pageId){
+  const page=document.getElementById(pageId);if(!page)return;
+  page.querySelectorAll('ins.adsbygoogle').forEach(el=>{
+    if(el.getAttribute('data-ad-pushed'))return;
+    el.setAttribute('data-ad-pushed','1');
+    try{(window.adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}
+  });
+}
 
 // ── Menu board ────────────────────────────────────────
 function drawMenuBoard(){
@@ -5142,7 +5188,7 @@ function cAiEval(bd,p){
   const mid=Math.floor(sz/2);
   for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
     if(!bd[r][c]) continue;
-    const cur=bd[r][c], sign=cur===p?1:-2.2;
+    const cur=bd[r][c], sign=cur===p?1:-2.6;
     let strongCount=0; // 이 칸에서 동시에 발생하는 "열린3 이상" 라인 개수 (이중위협 탐지용)
     for(const[dr,dc]of C_AI_DIRS){
       const{cnt,open,openBoth}=cAiLine(bd,r,c,dr,dc,cur);
@@ -5214,7 +5260,7 @@ function cMinimax(bd,depth,alpha,beta,isMax,aiP){
   const cands=p===1?allCands.filter(([r,c])=>!cIsRenjuForbidden(r,c,bd)):allCands;
   const useCands=cands.length>0?cands:allCands;
   if(depth===0) return cAiEval(bd,aiP);
-  const limit=depth>=4?5:depth===3?6:depth===2?8:12;
+  const limit=depth>=5?6:depth===4?7:depth===3?8:depth===2?10:14;
   const sorted=cAiSortCands(bd,useCands,p);
   const top=sorted.slice(0,limit);
   if(isMax){
@@ -5268,8 +5314,9 @@ function cAiMakesDoubleThreat(bd,r,c,p){
 }
 
 // AI 최선의 수 계산
+// 난이도별 실제 탐색 깊이 상향: 전문가=7, 고수=6, 중수=4, 초보=2 (기존보다 훨씬 강함)
 function cAiBestMove(bd,aiP,depth){
-  const realDepth={8:5,6:4,4:2,2:1}[depth]||2;
+  const realDepth={8:7,6:6,4:4,2:2}[depth]||3;
   const opp=aiP===1?2:1;
   // 흑(aiP===1)이면 금수 제외 필터
   const isForbidden=(r,c)=>aiP===1&&cIsRenjuForbidden(r,c,bd);
@@ -5281,8 +5328,8 @@ function cAiBestMove(bd,aiP,depth){
   // 즉시 막기 (상대가 1수로 완성하는 경우)
   // 상대 완성수도 금수가 아닌 위치만 막을 필요 있음 (하지만 막기는 어디든 가능)
   for(const[r,c]of allCands){bd[r][c]=opp;if(cAiCheckWin(bd,r,c,opp)){bd[r][c]=0;if(!isForbidden(r,c))return[r,c];}bd[r][c]=0;}
-  // 고수/전문가(depth>=6): 강제수까지 인식
-  if(depth>=6){
+  // 중수 이상(depth>=4): 강제수까지 인식 (기존엔 고수/전문가만 적용되던 것을 중수까지 확대)
+  if(depth>=4){
     for(const[r,c]of useCands){if(cAiMakesOpenFour(bd,r,c,aiP))return[r,c];}
     // 상대가 두면 열린4가 생기는 칸 → 반드시 막음
     for(const[r,c]of allCands){if(cAiMakesOpenFour(bd,r,c,opp)&&!isForbidden(r,c))return[r,c];}
@@ -5290,14 +5337,16 @@ function cAiBestMove(bd,aiP,depth){
     for(const[r,c]of allCands){if(cAiMakesDoubleThreat(bd,r,c,opp)&&!isForbidden(r,c))return[r,c];}
   }
   const sorted=cAiSortCands(bd,useCands,aiP);
-  const topLimit={8:14,6:11,4:6,2:5}[depth]||8;
+  const topLimit={8:20,6:16,4:10,2:6}[depth]||8;
   const top=sorted.slice(0,topLimit);
   let bestScore=-Infinity, bestMove=null;
   for(const[r,c]of top){
     bd[r][c]=aiP;
     const v=cMinimax(bd,realDepth-1,-Infinity,Infinity,false,aiP);
     bd[r][c]=0;
-    if(v>bestScore||(v===bestScore&&Math.random()<0.15)){bestScore=v;bestMove=[r,c];}
+    // 고수/전문가는 흔들림 없이 최선의 수만 선택, 하위 난이도만 약간의 무작위성 유지
+    const randChance=depth>=6?0:0.15;
+    if(v>bestScore||(v===bestScore&&Math.random()<randChance)){bestScore=v;bestMove=[r,c];}
   }
   return bestMove||top[0]||useCands[0];
 }
@@ -5831,6 +5880,40 @@ function stopChat(){
 }
 
 // ── Auto-init Firebase on load ────────────────────────
+// ── 공지사항 ──────────────────────────────────────────
+// 관리자는 아래 배열만 수정하면 앱 내 공지사항이 갱신됩니다.
+// date: 'YYYY-MM-DD' 형식, tag: 뱃지에 표시할 짧은 라벨 (예: '업데이트','이벤트','점검')
+const NOTICES=[
+  {date:'2026-07-06',tag:'업데이트',title:'클래식 오목 AI 난이도 강화',body:'클래식 오목의 AI가 더 똑똑해졌습니다. 특히 고수/전문가 난이도는 상대의 위협을 훨씬 정확하게 읽고 대응합니다.'},
+  {date:'2026-07-06',tag:'안내',title:'전략적 오목에 오신 것을 환영합니다!',body:'오목에 카드 능력을 더한 전략 보드게임입니다. 온라인 대전, AI 대전, 로컬 2인 플레이를 즐겨보세요.\n문의사항은 하단 문의하기를 이용해주세요.'}
+];
+function _noticeLatestKey(){return NOTICES.length?NOTICES[0].date+'|'+NOTICES[0].title:'';}
+function updateNoticeDot(){
+  const dot=document.getElementById('menuNoticeDot');
+  if(!dot)return;
+  const seen=localStorage.getItem('lastSeenNotice');
+  dot.style.display=(seen!==_noticeLatestKey()&&NOTICES.length)?'block':'none';
+}
+function renderNotices(){
+  const wrap=document.getElementById('noticeListWrap');
+  if(!wrap)return;
+  if(!NOTICES.length){wrap.innerHTML='<div class="notice-empty">등록된 공지사항이 없습니다.</div>';return;}
+  wrap.innerHTML=NOTICES.map(n=>`
+    <div class="notice-item">
+      <div class="notice-item-head">
+        <span class="notice-item-tag">${escHtml(n.tag||'공지')}</span>
+        <span class="notice-item-title">${escHtml(n.title)}</span>
+        <span class="notice-item-date">${escHtml(n.date)}</span>
+      </div>
+      <div class="notice-item-body">${escHtml(n.body)}</div>
+    </div>`).join('');
+}
+function openNoticeModal(){
+  renderNotices();
+  document.getElementById('noticeModal').classList.add('show');
+  if(NOTICES.length){localStorage.setItem('lastSeenNotice',_noticeLatestKey());}
+  updateNoticeDot();
+}
 // ── 문의하기 / 건의사항 ────────────────────────────────
 function openContactModal(){
   document.getElementById('contactModal').classList.add('show');
@@ -5876,6 +5959,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   initFirebase();
   initBoardEvents();
   renderBook();
+  updateNoticeDot();
+  pushAdsIn('page-auth');
   // Enter 키로 로그인/회원가입
   ['authId','authPw','authPw2','authEmail','authNick'].forEach(id=>{
     const el=document.getElementById(id);
