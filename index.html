@@ -138,7 +138,7 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .notice-item-tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;flex-shrink:0;}
 .notice-item-body{font-size:12.5px;color:var(--text2);line-height:1.65;white-space:pre-line;}
 .notice-empty{text-align:center;padding:30px 0;color:var(--text3);font-size:13px;}
-.menu-notice-dot{position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+.menu-notice-dot{position:absolute;top:4px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;border:1.5px solid #fff;}
 .ad-slot{width:100%;max-width:420px;min-height:90px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .ad-slot ins{width:100%;}
 #page-auth .ad-slot{margin-top:18px;}
@@ -152,11 +152,8 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .menu-btn-group{display:flex;flex-direction:column;gap:8px;width:100%;}
 /* TOP BAR */
 .top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:flex-start;padding:12px 14px;z-index:50;pointer-events:none;}
-.top-bar-left{display:flex;flex-direction:column;gap:8px;pointer-events:auto;}
-.menu-small-col{display:flex;flex-direction:row;gap:7px;}
-.menu-small-btn{display:flex;align-items:center;gap:5px;background:var(--ui-bg);border:1.5px solid var(--border2);border-radius:99px;padding:6px 13px 6px 10px;font-size:11.5px;font-weight:800;color:var(--text2);position:relative;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.05);transition:transform .12s,border-color .12s,color .12s;}
-.menu-small-btn:active{transform:scale(0.95);}
-.menu-small-btn:hover{border-color:var(--accent);color:var(--accent);}
+.top-bar-left{display:flex;flex-direction:column;gap:0;pointer-events:auto;}
+.top-bar-row{display:flex;align-items:center;gap:8px;}
 .menu-small-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .menu-small-icon svg{width:100%;height:100%;}
 .top-profile{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);border:1.5px solid var(--border);border-radius:99px;padding:6px 14px 6px 6px;box-shadow:0 2px 10px rgba(0,0,0,0.06);}
@@ -164,6 +161,18 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .top-profile-info{display:flex;flex-direction:column;line-height:1.25;}
 .top-profile-name{font-weight:800;font-size:13px;}
 .top-profile-record{font-size:10.5px;color:var(--text3);}
+/* 햄버거 메뉴 트리거 + 드롭다운 */
+.menu-hamburger-btn{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);border:1.5px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;position:relative;transition:transform .15s,border-color .15s;}
+.menu-hamburger-btn:active{transform:scale(0.92);}
+.menu-hamburger-btn.open{border-color:var(--accent);}
+.menu-hamburger-btn svg{width:18px;height:18px;color:var(--text2);transition:transform .25s ease;}
+.menu-hamburger-btn.open svg{transform:rotate(90deg);color:var(--accent);}
+.menu-dropdown{max-height:0;opacity:0;overflow:hidden;transform:translateY(-8px);transition:max-height .32s cubic-bezier(.34,1.1,.5,1),opacity .22s ease,transform .28s cubic-bezier(.34,1.1,.5,1);}
+.menu-dropdown.open{max-height:420px;opacity:1;transform:translateY(0);margin-top:8px;}
+.menu-dropdown-inner{display:flex;flex-direction:column;gap:3px;background:var(--ui-bg);border:1.5px solid var(--border);border-radius:16px;padding:8px;box-shadow:0 12px 28px rgba(0,0,0,0.14);width:190px;}
+.menu-dropdown-item{display:flex;align-items:center;gap:11px;padding:10px 11px;background:transparent;border:none;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--text2);text-align:left;width:100%;position:relative;transition:background .15s,color .15s;}
+.menu-dropdown-item:active{transform:scale(0.98);}
+.menu-dropdown-item:hover{background:var(--bg2);color:var(--accent);}
 /* MENU REDESIGN */
 .menu-wrap{padding-top:78px;}
 .menu-card-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:10px;font-weight:900;padding:1px 6px;border-radius:99px;}
@@ -973,39 +982,46 @@ canvas#boardCanvas{display:block;touch-action:none;}
 <div id="page-menu" class="page">
   <div class="top-bar">
     <div class="top-bar-left">
-      <div class="top-profile" id="topProfile" onclick="if(currentUserData&&!currentUserData.isGuest)showPage('page-settings');else if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');}">
-        <div class="top-profile-avatar" id="menuAvatar">?</div>
-        <div class="top-profile-info">
-          <div class="top-profile-name" id="menuNickname">-</div>
-          <div class="top-profile-record" id="menuRecord">승 0 / 패 0</div>
+      <div class="top-bar-row">
+        <div class="top-profile" id="topProfile" onclick="if(currentUserData&&!currentUserData.isGuest)showPage('page-settings');else if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');}">
+          <div class="top-profile-avatar" id="menuAvatar">?</div>
+          <div class="top-profile-info">
+            <div class="top-profile-name" id="menuNickname">-</div>
+            <div class="top-profile-record" id="menuRecord">승 0 / 패 0</div>
+          </div>
         </div>
-      </div>
-      <div class="menu-small-col">
-        <button class="menu-small-btn" id="menuNoticeBtn" onclick="openNoticeModal()" style="position:relative;">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 0 1-3.2 2.4"/></svg></span>
-          공지사항
+        <button class="menu-hamburger-btn" id="menuHamburgerBtn" onclick="toggleMenuDropdown()" aria-label="메뉴">
           <span class="menu-notice-dot" id="menuNoticeDot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
         </button>
-        <button class="menu-small-btn social" id="menuFriendsBtn" onclick="openFriendsPage()" style="display:none;">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="17" cy="8" r="2.5"/><path d="M21.5 21v-1a4.5 4.5 0 0 0-3-4.24"/></svg></span>
-          소셜<span class="menu-card-badge" id="menuFriendsBadge" style="display:none;"></span>
-        </button>
-        <button class="menu-small-btn" onclick="document.getElementById('gameGuideModal').classList.add('show')">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-          게임 설명
-        </button>
-        <button class="menu-small-btn" onclick="showPage('page-book')">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-          카드 도감
-        </button>
-        <button class="menu-small-btn" onclick="openContactModal()">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
-          문의하기
-        </button>
-        <button class="menu-small-btn" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSf9Gesp6N2e20o2ndN1q2KLFDWUeIFAPMqe51D8KrTlqNSm_g/viewform?usp=publish-editor','_blank')">
-          <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-          건의사항
-        </button>
+      </div>
+      <div class="menu-dropdown" id="menuDropdown">
+        <div class="menu-dropdown-inner">
+          <button class="menu-dropdown-item" id="menuNoticeBtn" onclick="closeMenuDropdown();openNoticeModal()">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 0 1-3.2 2.4"/></svg></span>
+            공지사항
+          </button>
+          <button class="menu-dropdown-item social" id="menuFriendsBtn" onclick="closeMenuDropdown();openFriendsPage()" style="display:none;">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="17" cy="8" r="2.5"/><path d="M21.5 21v-1a4.5 4.5 0 0 0-3-4.24"/></svg></span>
+            소셜<span class="menu-card-badge" id="menuFriendsBadge" style="display:none;"></span>
+          </button>
+          <button class="menu-dropdown-item" onclick="closeMenuDropdown();document.getElementById('gameGuideModal').classList.add('show')">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            게임 설명
+          </button>
+          <button class="menu-dropdown-item" onclick="closeMenuDropdown();showPage('page-book')">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+            카드 도감
+          </button>
+          <button class="menu-dropdown-item" onclick="closeMenuDropdown();openContactModal()">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+            문의하기
+          </button>
+          <button class="menu-dropdown-item" onclick="closeMenuDropdown();window.open('https://docs.google.com/forms/d/e/1FAIpQLSf9Gesp6N2e20o2ndN1q2KLFDWUeIFAPMqe51D8KrTlqNSm_g/viewform?usp=publish-editor','_blank')">
+            <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            건의사항
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2116,6 +2132,7 @@ async function loadFriendRequests(){
     }else{
       badge.style.display='none';menuBadge.style.display='none';
     }
+    updateNoticeDot();
     if(!pending.length){el.innerHTML='<div class="friends-msg">받은 친구 요청이 없습니다.</div>';return;}
     el.innerHTML=pending.map(([fromUid,v])=>`
       <div class="friend-item">
@@ -2348,6 +2365,7 @@ async function checkFriendBadge(){
     const badge=document.getElementById('menuFriendsBadge');
     if(btn)btn.style.display='flex';
     if(badge){badge.textContent=cnt||'';badge.style.display=cnt?'inline':'none';}
+    updateNoticeDot();
   }catch(e){}
 }
 
@@ -2356,6 +2374,7 @@ async function checkFriendBadge(){
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  closeMenuDropdown();
   if(id==='page-book')renderBook();
   if(id==='page-menu'){drawMenuBoard();closePlayModeModal();pushAdsIn('page-menu');}
   if(id==='page-online'){
@@ -2369,6 +2388,24 @@ function showPage(id){
   }
 }
 function closeModal(id){document.getElementById(id).classList.remove('show');}
+// 상단 햄버거 메뉴 드롭다운
+function toggleMenuDropdown(){
+  const dd=document.getElementById('menuDropdown'),btn=document.getElementById('menuHamburgerBtn');
+  if(!dd||!btn)return;
+  const open=dd.classList.toggle('open');
+  btn.classList.toggle('open',open);
+}
+function closeMenuDropdown(){
+  const dd=document.getElementById('menuDropdown'),btn=document.getElementById('menuHamburgerBtn');
+  if(dd)dd.classList.remove('open');
+  if(btn)btn.classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('menuDropdown'),btn=document.getElementById('menuHamburgerBtn');
+  if(!dd||!dd.classList.contains('open'))return;
+  if(dd.contains(e.target)||(btn&&btn.contains(e.target)))return;
+  closeMenuDropdown();
+});
 // 광고 슬롯 초기화 — 페이지가 실제로 보여질 때(너비>0) 한 번만 push
 function pushAdsIn(pageId){
   const page=document.getElementById(pageId);if(!page)return;
@@ -5892,7 +5929,10 @@ function updateNoticeDot(){
   const dot=document.getElementById('menuNoticeDot');
   if(!dot)return;
   const seen=localStorage.getItem('lastSeenNotice');
-  dot.style.display=(seen!==_noticeLatestKey()&&NOTICES.length)?'block':'none';
+  const hasUnreadNotice=(seen!==_noticeLatestKey())&&NOTICES.length;
+  const friendsBadge=document.getElementById('menuFriendsBadge');
+  const hasFriendReq=friendsBadge&&friendsBadge.style.display!=='none'&&friendsBadge.textContent;
+  dot.style.display=(hasUnreadNotice||hasFriendReq)?'block':'none';
 }
 function renderNotices(){
   const wrap=document.getElementById('noticeListWrap');
