@@ -21,50 +21,50 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .loading-spinner{width:34px;height:34px;border:3.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .page.active{display:flex;flex-direction:column;}
-/* AUTH — 리디자인 */
-#page-auth{align-items:center;justify-content:center;background:linear-gradient(175deg,#2e2318 0%,#3d2e18 40%,#2a1e10 100%);min-height:100vh;position:relative;overflow:hidden;}
-#page-auth::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(184,134,11,0.10) 0%,transparent 55%);pointer-events:none;}
+/* AUTH — 리디자인 (메인 화면과 동일한 배경) */
+#page-auth{align-items:center;justify-content:center;background:var(--bg);min-height:100vh;position:relative;overflow:hidden;}
+#page-auth::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(184,134,11,0.06) 0%,transparent 55%);pointer-events:none;}
 .auth-outer{width:100%;max-width:420px;padding:32px 20px 36px;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:1;}
 /* 로고 */
 .auth-logo-block{text-align:center;margin-bottom:10px;}
 .auth-logo-block h1{font-family:'Black Han Sans',sans-serif;font-size:40px;color:var(--accent);letter-spacing:3px;line-height:1;}
-.auth-logo-block p{font-size:11px;color:rgba(255,255,255,0.28);letter-spacing:2px;margin-top:6px;text-transform:uppercase;}
+.auth-logo-block p{font-size:11px;color:var(--text3);letter-spacing:2px;margin-top:6px;text-transform:uppercase;}
 /* 게임 설명 블록 */
-.auth-desc-block{width:100%;margin:14px 0 18px;padding:14px 16px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.08);border-radius:14px;}
-.auth-desc-headline{font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:5px;line-height:1.5;}
+.auth-desc-block{width:100%;margin:14px 0 18px;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+.auth-desc-headline{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:5px;line-height:1.5;}
 .auth-desc-headline b{color:var(--accent);}
-.auth-desc-sub{font-size:12px;color:rgba(255,255,255,0.38);line-height:1.7;margin-bottom:10px;}
+.auth-desc-sub{font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:10px;}
 .auth-feature-tags{display:flex;gap:5px;flex-wrap:wrap;}
-.auth-feature-tag{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid rgba(255,255,255,0.11);color:rgba(255,255,255,0.42);font-weight:600;}
+.auth-feature-tag{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--border2);color:var(--text2);font-weight:600;}
 /* 카드 */
-.auth-card{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px 20px 20px;box-shadow:0 16px 40px rgba(0,0,0,0.3);}
+.auth-card{width:100%;background:var(--ui-bg);border:1px solid var(--border);border-radius:18px;padding:24px 20px 20px;box-shadow:0 16px 40px rgba(0,0,0,0.08);}
 /* 탭 */
-.auth-tab-bar{display:flex;background:rgba(0,0,0,0.2);border-radius:9px;padding:3px;gap:3px;margin-bottom:18px;}
-.auth-tab{flex:1;padding:8px;background:transparent;border:none;font-size:13.5px;font-weight:700;color:rgba(255,255,255,0.32);border-radius:7px;transition:all .2s;}
+.auth-tab-bar{display:flex;background:var(--bg2);border-radius:9px;padding:3px;gap:3px;margin-bottom:18px;}
+.auth-tab{flex:1;padding:8px;background:transparent;border:none;font-size:13.5px;font-weight:700;color:var(--text3);border-radius:7px;transition:all .2s;}
 .auth-tab.active{background:var(--accent);color:#fff;}
 /* 필드 */
 .auth-field{display:flex;flex-direction:column;gap:4px;margin-bottom:9px;}
-.auth-field label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:0.3px;}
+.auth-field label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.3px;}
 .auth-input{padding:12px 14px;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;font-size:14px;outline:none;width:100%;color:var(--text);transition:border-color .2s;}
 .auth-input:focus{border-color:var(--accent);}
-.auth-card .auth-input{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.1);color:#fff;}
-.auth-card .auth-input::placeholder{color:rgba(255,255,255,0.2);}
-.auth-card .auth-input:focus{border-color:var(--accent);background:rgba(255,255,255,0.1);}
+.auth-card .auth-input{background:var(--bg);border:1.5px solid var(--border2);color:var(--text);}
+.auth-card .auth-input::placeholder{color:var(--text3);}
+.auth-card .auth-input:focus{border-color:var(--accent);background:var(--ui-bg);}
 /* 버튼 */
 .auth-submit-btn{width:100%;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:800;background:var(--accent);color:#fff;margin-top:4px;transition:opacity .15s,transform .12s;}
 .auth-submit-btn:active{opacity:.82;transform:scale(0.98);}
-.auth-google-btn{width:100%;padding:12px;border:1.5px solid rgba(255,255,255,0.13);border-radius:11px;font-size:14px;font-weight:700;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.72);display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s;}
-.auth-google-btn:active{background:rgba(255,255,255,0.1);}
-.auth-guest-btn{width:100%;padding:10px;border:1px solid rgba(255,255,255,0.07);border-radius:11px;font-size:13px;font-weight:600;background:transparent;color:rgba(255,255,255,0.26);transition:color .2s;}
-.auth-guest-btn:active{color:rgba(255,255,255,0.48);}
-.auth-sep{display:flex;align-items:center;gap:10px;margin:12px 0;color:rgba(255,255,255,0.16);font-size:11px;}
-.auth-sep::before,.auth-sep::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08);}
+.auth-google-btn{width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:11px;font-size:14px;font-weight:700;background:var(--panel);color:var(--text2);display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s;}
+.auth-google-btn:active{background:var(--bg2);}
+.auth-guest-btn{width:100%;padding:10px;border:1px solid var(--border);border-radius:11px;font-size:13px;font-weight:600;background:transparent;color:var(--text3);transition:color .2s;}
+.auth-guest-btn:active{color:var(--text2);}
+.auth-sep{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--text3);font-size:11px;}
+.auth-sep::before,.auth-sep::after{content:'';flex:1;height:1px;background:var(--border);}
 .auth-err{font-size:12px;color:#ff7070;text-align:center;min-height:15px;margin:2px 0 4px;}
-.auth-find-link{background:none;border:none;font-size:12px;color:rgba(255,255,255,0.26);padding:4px;align-self:center;margin-top:4px;}
-.auth-find-link:hover{color:rgba(255,255,255,0.52);}
+.auth-find-link{background:none;border:none;font-size:12px;color:var(--text3);padding:4px;align-self:center;margin-top:4px;}
+.auth-find-link:hover{color:var(--accent);}
 .auth-footer-links{display:flex;gap:20px;justify-content:center;margin-top:16px;}
-.auth-footer-link{background:none;border:none;font-size:12px;color:rgba(255,255,255,0.22);padding:4px;transition:color .15s;}
-.auth-footer-link:hover{color:rgba(255,255,255,0.5);}
+.auth-footer-link{background:none;border:none;font-size:12px;color:var(--text3);padding:4px;transition:color .15s;}
+.auth-footer-link:hover{color:var(--accent);}
 @keyframes trapPop{0%{transform:scale(0.5);opacity:1;}60%{transform:scale(1.3);opacity:1;}100%{transform:scale(1.5);opacity:0;}}
 /* 함정/지뢰 폭발 파편 이펙트 */
 @keyframes shard{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
@@ -151,12 +151,12 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .menu-btn.disabled{background:var(--bg2);color:var(--text3);border:1.5px solid var(--border);cursor:not-allowed;}
 .menu-btn-group{display:flex;flex-direction:column;gap:8px;width:100%;}
 /* TOP BAR */
-.top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:flex-start;padding:12px 14px;z-index:50;pointer-events:none;}
+.top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;z-index:50;pointer-events:none;}
 .top-bar-left{display:flex;flex-direction:column;gap:0;pointer-events:auto;}
 .top-bar-row{display:flex;align-items:center;gap:8px;}
 .menu-small-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .menu-small-icon svg{width:100%;height:100%;}
-.top-profile{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);border:1.5px solid var(--border);border-radius:99px;padding:6px 14px 6px 6px;box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.top-profile{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);border:1.5px solid var(--border);border-radius:99px;padding:6px 14px 6px 6px;box-shadow:0 2px 10px rgba(0,0,0,0.06);pointer-events:auto;}
 .top-profile-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0;}
 .top-profile-info{display:flex;flex-direction:column;line-height:1.25;}
 .top-profile-name{font-weight:800;font-size:13px;}
@@ -525,11 +525,11 @@ canvas#boardCanvas{display:block;touch-action:none;}
           <input class="auth-input" id="authPw2" type="password" placeholder="비밀번호 확인" autocomplete="new-password">
         </div>
         <div class="auth-field" id="authEmailField" style="display:none;">
-          <label>이메일 <span style="font-size:10px;color:rgba(255,255,255,0.25);text-transform:none;font-weight:500;">(인증·계정 복구용)</span></label>
+          <label>이메일 <span style="font-size:10px;color:var(--text3);text-transform:none;font-weight:500;">(인증·계정 복구용)</span></label>
           <input class="auth-input" id="authEmail" type="email" placeholder="example@email.com" maxlength="254" autocomplete="email">
         </div>
         <div class="auth-field" id="authNickField" style="display:none;">
-          <label>닉네임 <span style="font-size:10px;color:rgba(255,255,255,0.25);text-transform:none;font-weight:500;">(2~10자, 게임에 표시)</span></label>
+          <label>닉네임 <span style="font-size:10px;color:var(--text3);text-transform:none;font-weight:500;">(2~10자, 게임에 표시)</span></label>
           <input class="auth-input" id="authNick" type="text" placeholder="닉네임 입력" maxlength="10">
         </div>
         <div class="auth-err" id="authErr"></div>
@@ -545,12 +545,12 @@ canvas#boardCanvas{display:block;touch-action:none;}
       </button>
       <div class="auth-sep">또는</div>
       <button class="auth-guest-btn" onclick="loginAsGuest()">게스트로 플레이</button>
-      <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin-top:8px;">게스트는 전적이 저장되지 않으며 창을 닫으면 사라집니다.</p>
+      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">게스트는 전적이 저장되지 않으며 창을 닫으면 사라집니다.</p>
     </div>
     <!-- 하단 링크 -->
     <div class="auth-footer-links">
       <button class="auth-footer-link" onclick="openContactModal()">문의하기</button>
-      <span style="color:rgba(255,255,255,0.1);font-size:12px;line-height:1.8;">|</span>
+      <span style="color:var(--border2);font-size:12px;line-height:1.8;">|</span>
       <button class="auth-footer-link" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSf9Gesp6N2e20o2ndN1q2KLFDWUeIFAPMqe51D8KrTlqNSm_g/viewform?usp=publish-editor','_blank')">건의사항</button>
     </div>
     <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
@@ -982,19 +982,10 @@ canvas#boardCanvas{display:block;touch-action:none;}
 <div id="page-menu" class="page">
   <div class="top-bar">
     <div class="top-bar-left">
-      <div class="top-bar-row">
-        <div class="top-profile" id="topProfile" onclick="if(currentUserData&&!currentUserData.isGuest)showPage('page-settings');else if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');}">
-          <div class="top-profile-avatar" id="menuAvatar">?</div>
-          <div class="top-profile-info">
-            <div class="top-profile-name" id="menuNickname">-</div>
-            <div class="top-profile-record" id="menuRecord">승 0 / 패 0</div>
-          </div>
-        </div>
-        <button class="menu-hamburger-btn" id="menuHamburgerBtn" onclick="toggleMenuDropdown()" aria-label="메뉴">
-          <span class="menu-notice-dot" id="menuNoticeDot"></span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-        </button>
-      </div>
+      <button class="menu-hamburger-btn" id="menuHamburgerBtn" onclick="toggleMenuDropdown()" aria-label="메뉴">
+        <span class="menu-notice-dot" id="menuNoticeDot"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
       <div class="menu-dropdown" id="menuDropdown">
         <div class="menu-dropdown-inner">
           <button class="menu-dropdown-item" id="menuNoticeBtn" onclick="closeMenuDropdown();openNoticeModal()">
@@ -1022,6 +1013,13 @@ canvas#boardCanvas{display:block;touch-action:none;}
             건의사항
           </button>
         </div>
+      </div>
+    </div>
+    <div class="top-profile" id="topProfile" onclick="if(currentUserData&&!currentUserData.isGuest)showPage('page-settings');else if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');}">
+      <div class="top-profile-avatar" id="menuAvatar">?</div>
+      <div class="top-profile-info">
+        <div class="top-profile-name" id="menuNickname">-</div>
+        <div class="top-profile-record" id="menuRecord">승 0 / 패 0</div>
       </div>
     </div>
   </div>
