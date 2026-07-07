@@ -474,6 +474,48 @@ canvas#boardCanvas{display:block;touch-action:none;}
 .b-방해{background:#fce4ec;color:#c62828;}.b-강화{background:#fff8e1;color:#f57f17;}
 .b-특수{background:#f3e5f5;color:#6a1b9a;}.b-별{background:#fff9c4;color:#f9a825;}
 .b-즉시{background:#f5f5f5;color:#555;}.b-지속{background:#e8f5e9;color:#2e7d32;}
+/* ── 인터랙티브 게임 튜토리얼 ── */
+.tut-outer-wrap{border:1.5px solid var(--border);border-radius:14px;overflow:hidden;background:var(--ui-bg);box-shadow:0 3px 14px rgba(0,0,0,0.06);}
+.tut-stage{position:relative;overflow:hidden;}
+.tut-content{position:relative;transition:filter .4s ease;}
+.tut-content.blurred{filter:blur(3.2px) saturate(0.85);}
+.tut-content.blurred *{pointer-events:none;}
+.tut-dim{position:absolute;inset:0;background:rgba(20,15,8,0.4);opacity:0;transition:opacity .4s ease;pointer-events:none;z-index:15;}
+.tut-dim.active{opacity:1;}
+.tut-spot-layer{position:absolute;inset:0;z-index:20;pointer-events:none;}
+.tut-clone{position:absolute;z-index:21;border-radius:9px;cursor:pointer;pointer-events:auto;animation:tutClonePulse 1.3s ease-in-out infinite;}
+@keyframes tutClonePulse{0%,100%{box-shadow:0 0 0 4px rgba(184,134,11,0.5),0 0 14px rgba(184,134,11,0.4),0 6px 18px rgba(0,0,0,0.28);}50%{box-shadow:0 0 0 7px rgba(184,134,11,0.28),0 0 26px rgba(184,134,11,0.6),0 6px 18px rgba(0,0,0,0.28);}}
+.tut-callout{position:absolute;z-index:25;width:200px;background:#1c1610;color:#fdf6e8;font-size:12.5px;font-weight:600;line-height:1.55;padding:11px 13px;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,0.35);opacity:0;transform:translateY(8px) scale(0.96);transition:opacity .28s ease,transform .28s ease;pointer-events:none;}
+.tut-callout.show{opacity:1;transform:translateY(0) scale(1);}
+.tut-callout .tut-tap-hint{display:block;margin-top:6px;font-size:11px;font-weight:800;color:#ffcf5c;}
+.tut-callout-arrow{position:absolute;width:12px;height:12px;background:#1c1610;transform:rotate(45deg);left:50%;margin-left:-6px;}
+.tut-callout.arrow-top .tut-callout-arrow{top:-5px;}
+.tut-callout.arrow-bottom .tut-callout-arrow{bottom:-5px;}
+.tut-flash{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(255,251,240,0.55);opacity:0;pointer-events:none;transition:opacity .22s ease;}
+.tut-flash.show{opacity:1;}
+.tut-flash-text{font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--accent);letter-spacing:1px;text-shadow:0 2px 14px rgba(255,255,255,0.9);animation:tutFlashPop .55s ease;}
+@keyframes tutFlashPop{0%{transform:scale(0.4) rotate(-6deg);opacity:0;}55%{transform:scale(1.18) rotate(2deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+.tut-board-mini{display:grid;grid-template-columns:repeat(6,26px);grid-template-rows:repeat(6,26px);}
+.tut-cell{width:26px;height:26px;position:relative;cursor:pointer;}
+.tut-cell::before,.tut-cell::after{content:'';position:absolute;background:rgba(0,0,0,0.32);}
+.tut-cell::before{left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%);}
+.tut-cell::after{top:50%;left:0;right:0;height:1px;transform:translateY(-50%);}
+.tut-stone{position:absolute;left:50%;top:50%;width:19px;height:19px;border-radius:50%;transform:translate(-50%,-50%) scale(0);transition:transform .3s cubic-bezier(.34,1.6,.64,1),opacity .3s ease;opacity:0;}
+.tut-stone.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.tut-stone.preview{opacity:0.45;}
+.tut-stone.b{background:radial-gradient(circle at 35% 30%,#555,#111);}
+.tut-stone.w{background:radial-gradient(circle at 35% 30%,#fff,#aaa);border:1px solid #ccc;}
+.tut-progress{display:flex;gap:5px;justify-content:center;align-items:center;padding:11px 0 3px;background:var(--panel);border-top:1px solid var(--border);}
+.tut-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .2s,transform .2s;}
+.tut-dot.active{background:var(--accent);transform:scale(1.35);}
+.tut-final{position:absolute;inset:0;z-index:50;background:var(--ui-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px 26px;text-align:center;}
+.tut-final .tf-icon{font-size:34px;margin-bottom:8px;}
+.tut-final h4{font-family:'Black Han Sans',sans-serif;font-size:19px;color:var(--accent);margin-bottom:6px;}
+.tut-final p{font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+.tut-final-btns{display:flex;gap:8px;justify-content:center;}
+.tut-quickinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.tut-quickinfo-card{background:var(--bg2);border-radius:9px;padding:11px 12px;font-size:12px;color:var(--text2);line-height:1.55;}
+.tut-quickinfo-card b{display:block;color:var(--accent);font-size:12px;margin-bottom:3px;}
 </style>
 </head>
 <body>
@@ -996,7 +1038,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
             <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="17" cy="8" r="2.5"/><path d="M21.5 21v-1a4.5 4.5 0 0 0-3-4.24"/></svg></span>
             소셜<span class="menu-card-badge" id="menuFriendsBadge" style="display:none;"></span>
           </button>
-          <button class="menu-dropdown-item" onclick="closeMenuDropdown();document.getElementById('gameGuideModal').classList.add('show')">
+          <button class="menu-dropdown-item" onclick="closeMenuDropdown();openGameGuide()">
             <span class="menu-small-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
             게임 설명
           </button>
@@ -1413,49 +1455,78 @@ canvas#boardCanvas{display:block;touch-action:none;}
     </div>
   </div>
 </div>
+<!-- TUTORIAL OFFER MODAL (신규 회원가입/게스트 최초 1회) -->
+<div class="modal-overlay" id="tutorialOfferModal">
+  <div class="modal-box">
+    <h3>튜토리얼을 보시겠어요?</h3>
+    <p>돌을 놓는 방법부터 카드 사용, 합성까지 화면을 직접 눌러보며 간단히 익힐 수 있어요.</p>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="skipTutorialOffer()">스킵</button>
+      <button class="modal-btn confirm" onclick="acceptTutorialOffer()">보기</button>
+    </div>
+  </div>
+</div>
 <!-- GAME GUIDE MODAL -->
 <div class="modal-overlay" id="gameGuideModal" style="overflow-y:auto;align-items:flex-start;padding:20px 0;">
-  <div class="modal-box" style="max-width:460px;width:93%;max-height:90vh;overflow-y:auto;padding:24px 20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+  <div class="modal-box" style="max-width:460px;width:93%;max-height:90vh;overflow-y:auto;padding:20px 16px 22px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <h3 style="margin-bottom:0;">게임 설명</h3>
-      <button onclick="document.getElementById('gameGuideModal').classList.remove('show')" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+      <button onclick="closeGameGuide()" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text2);line-height:1.65;">
-      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">승리 조건</div>
-        <div>가로·세로·대각선 방향으로 자신의 돌 5개를 먼저 연속으로 놓으면 승리합니다.</div>
-      </div>
-      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">턴 진행 방식</div>
-        <div>
-          <b>① 판을 클릭</b> → 착수 위치 미리보기 표시<br>
-          <b>② [착수 확정]</b> 버튼 클릭 → 돌 착수 완료, 턴 종료<br><br>
-          <b>카드를 쓰고 싶다면?</b><br>
-          패널의 카드를 클릭 → <b>[능력 사용]</b> 버튼 클릭<br>
-          카드 효과 발동 후 <b>자동으로 착수 단계</b>로 전환됩니다.<br><br>
-          ⚠️ 한 턴에 카드는 <b>1장만</b> 사용할 수 있습니다.<br>
-          착수 중에도 카드를 선택하면 카드 사용 모드로 전환됩니다.
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5;">실제 게임 화면 그대로, 반짝이는 부분을 직접 눌러보면서 배우는 튜토리얼입니다.</p>
+
+    <div class="tut-outer-wrap">
+      <div class="tut-stage" id="tutStage">
+        <div class="tut-content" id="tutContent">
+          <div class="game-header" style="padding:9px 12px;">
+            <div style="display:flex;align-items:center;gap:6px;"><span class="gh-logo" style="font-size:14px;">전략적 오목</span></div>
+            <div class="turn-badge" id="tutTurnBadge"><div class="turn-stone-sm b" id="tutTurnStone"></div><span id="tutTurnLabel">흑의 턴</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;background:var(--bg);padding:16px 12px 4px;gap:12px;">
+            <div class="board-wrap" style="padding:10px;">
+              <div class="tut-board-mini" id="tutBoardGrid"></div>
+            </div>
+            <div class="side-panel" id="tutPanel" style="width:100%;border-radius:10px 10px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--panel);flex:none;">
+              <div class="panel-section"><div class="panel-section-label">내 패</div></div>
+              <div class="hand-list" id="tutHandList"></div>
+              <div class="merge-section">
+                <div class="panel-section-label" style="margin-bottom:4px;">합성</div>
+                <div class="merge-slots">
+                  <div class="merge-slot" id="tutMs0">+</div>
+                  <div class="merge-slot" id="tutMs1">+</div>
+                </div>
+                <button class="merge-btn" id="tutMergeBtn" disabled>합성 ▶</button>
+                <div class="merge-hint">같은 성급 카드 2장만 합성 가능</div>
+              </div>
+              <div class="action-section">
+                <button class="action-btn use-card" id="tutUseCardBtn" style="display:none;">능력 사용 ▶</button>
+                <button class="action-btn place-btn" id="tutPlaceBtn" style="display:none;" disabled>착수 확정</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tut-dim" id="tutDim"></div>
+        <div class="tut-spot-layer" id="tutSpotLayer"></div>
+        <div class="tut-flash" id="tutFlash"><div class="tut-flash-text" id="tutFlashText"></div></div>
+        <div class="tut-final" id="tutFinal" style="display:none;">
+          <div class="tf-icon">🎉</div>
+          <h4>튜토리얼 완료!</h4>
+          <p>이제 실제 대국에서 카드 능력 사용과 합성을 자유롭게 활용해보세요.</p>
+          <div class="tut-final-btns">
+            <button class="modal-btn cancel" onclick="startTutorial()">다시보기</button>
+            <button class="modal-btn confirm" onclick="closeGameGuide()">확인</button>
+          </div>
         </div>
       </div>
-      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">카드 시스템</div>
-        <div>
-          매 턴 시작 시 덱에서 카드 1장을 자동으로 드로우합니다.<br>
-          카드는 1성~5성으로 구분되며, 성급이 높을수록 강력합니다.<br><br>
-          <b>합성:</b> 같은 성급 카드 2장을 합성해 한 단계 높은 카드를 획득할 수 있습니다.<br>
-          최대 패는 <b>8장</b>입니다.
-        </div>
-      </div>
-      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">시간 제한</div>
-        <div>각 플레이어는 한 턴에 <b>45초</b>의 시간이 주어집니다.<br>시간이 초과되면 자동으로 턴이 넘어갑니다.</div>
-      </div>
-      <div style="background:var(--bg2);border-radius:9px;padding:13px 14px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:5px;">온라인 대전</div>
-        <div>방 만들기로 6자리 코드를 생성하고, 상대에게 코드를 공유하세요.<br>상대가 입장하면 자동으로 게임이 시작됩니다.</div>
-      </div>
+      <div class="tut-progress" id="tutProgress"></div>
     </div>
-    <button class="modal-btn confirm" onclick="document.getElementById('gameGuideModal').classList.remove('show')" style="width:100%;margin-top:16px;padding:11px;">확인</button>
+
+    <div class="tut-quickinfo-grid">
+      <div class="tut-quickinfo-card"><b>승리 조건</b>가로·세로·대각선으로 돌 5개를 먼저 연속으로 놓으면 승리합니다.</div>
+      <div class="tut-quickinfo-card"><b>시간 제한</b>한 턴에 45초, 초과 시 자동으로 턴이 넘어갑니다.</div>
+      <div class="tut-quickinfo-card"><b>카드 드로우</b>매 턴 시작 시 카드 1장을 자동으로 뽑습니다. 최대 8장 보유.</div>
+      <div class="tut-quickinfo-card"><b>온라인 대전</b>6자리 코드로 방을 만들고 공유하면 자동으로 대국이 시작됩니다.</div>
+    </div>
   </div>
 </div>
 <script>
@@ -1746,6 +1817,7 @@ async function submitAuth(){
       const userData={nickname:nick,username:rawId.toLowerCase(),email:emailInput,wins:0,losses:0};
       await db.ref('users/'+cred.user.uid).set(userData);
       await db.ref('usernames/'+rawId.toLowerCase()).set({uid:cred.user.uid,email:emailInput});
+      window._newAccountFlag=true;
     }catch(e){
       window._isSignup=false;
       try{await cred.user.delete();}catch(delErr){console.warn('좀비 계정 삭제 실패:',delErr);}
@@ -1825,6 +1897,7 @@ async function submitNickname(){
   }
   currentUserData=data;
   window._pendingUid=null;
+  window._newAccountFlag=true;
   closeModal('nickModal');
   showMenuWithUser();
 }
@@ -1835,6 +1908,7 @@ function loginAsGuest(){
   const guestNum=String(Math.floor(100000+Math.random()*900000));
   const guestNick='guest-'+guestNum;
   currentUserData={nickname:guestNick,wins:0,losses:0,isGuest:true};
+  window._newAccountFlag=true;
   showMenuWithGuest();
 }
 function showMenuWithGuest(){
@@ -1843,6 +1917,7 @@ function showMenuWithGuest(){
   document.getElementById('menuNickname').textContent=nick;
   document.getElementById('menuRecord').textContent='게스트 (전적 저장 안 됨, 탭하여 로그인)';
   showPage('page-menu');
+  maybeOfferTutorial();
 }
 function fbErrMsg(code){
   const m={
@@ -1966,6 +2041,7 @@ function showMenuWithUser(){
   checkFriendBadge();
   listenFriendGameInvites();
   showPage('page-menu');
+  maybeOfferTutorial();
 }
 function togglePlayMenu(){
   filterPlayModeModal('strategic');
@@ -5992,6 +6068,158 @@ function sendContactEmail(){
   },1500);
 }
 
+// ── 인터랙티브 게임 튜토리얼 (게임 설명 모달) ──────────
+const TUT_CARDS_INIT=[
+  {name:'안개 장막',star:1,type:'방해',tag:'즉시',desc:'상대가 다음 착수 미리보기를 볼 수 없게 합니다.'},
+  {name:'화염구',star:2,type:'강화',tag:'즉시',desc:'지정한 위치의 상대 돌을 하나 제거합니다.'},
+  {name:'얼음창',star:2,type:'강화',tag:'즉시',desc:'상대의 다음 턴 제한시간을 줄입니다.'}
+];
+const TUT_MERGE_RESULT={name:'메테오 스트라이크',star:3,type:'강화',tag:'즉시',desc:'가로 한 줄의 상대 돌을 모두 제거합니다.'};
+let tutStepIdx=-1,tutCalloutEl=null;
+
+function tutCardHTML(c){
+  return `<div class="hand-card-row"><span class="hand-card-name">${c.name}</span><span class="hand-card-stars" style="color:${STAR_COLOR[c.star]}">${STAR_CHAR[c.star]}</span></div><div class="hand-card-badges"><span class="badge b-${c.type}">${c.type}</span><span class="badge b-${c.tag}">${c.tag}</span></div><div class="hand-card-desc open">${c.desc}</div>`;
+}
+function renderTutHand(){
+  document.getElementById('tutHandList').innerHTML=TUT_CARDS_INIT.map((c,i)=>`<div class="hand-card mine" id="tutCard${i}">${tutCardHTML(c)}</div>`).join('');
+}
+function buildTutBoard(){
+  let html='';
+  for(let i=0;i<36;i++){
+    if(i===14)html+='<div class="tut-cell" id="tutCellTarget"><div class="tut-stone b preview" id="tutPreviewStone"></div></div>';
+    else if(i===8)html+='<div class="tut-cell"><div class="tut-stone w show"></div></div>';
+    else if(i===21)html+='<div class="tut-cell"><div class="tut-stone b show"></div></div>';
+    else html+='<div class="tut-cell"></div>';
+  }
+  document.getElementById('tutBoardGrid').innerHTML=html;
+}
+function maybeOfferTutorial(){
+  if(!window._newAccountFlag)return;
+  window._newAccountFlag=false;
+  setTimeout(()=>{document.getElementById('tutorialOfferModal').classList.add('show');},350);
+}
+function skipTutorialOffer(){
+  document.getElementById('tutorialOfferModal').classList.remove('show');
+}
+function acceptTutorialOffer(){
+  document.getElementById('tutorialOfferModal').classList.remove('show');
+  openGameGuide();
+}
+function openGameGuide(){
+  document.getElementById('gameGuideModal').classList.add('show');
+  startTutorial();
+}
+function closeGameGuide(){
+  document.getElementById('gameGuideModal').classList.remove('show');
+  tutClearSpotlight();
+}
+function startTutorial(){
+  document.getElementById('tutFinal').style.display='none';
+  document.getElementById('tutContent').style.display='';
+  renderTutHand();
+  buildTutBoard();
+  document.getElementById('tutTurnLabel').textContent='흑의 턴';
+  document.getElementById('tutTurnStone').className='turn-stone-sm b';
+  const pb=document.getElementById('tutPlaceBtn');pb.style.display='none';pb.disabled=true;
+  document.getElementById('tutUseCardBtn').style.display='none';
+  const ms0=document.getElementById('tutMs0'),ms1=document.getElementById('tutMs1');
+  ms0.className='merge-slot';ms0.textContent='+';
+  ms1.className='merge-slot';ms1.textContent='+';
+  document.getElementById('tutMergeBtn').disabled=true;
+  tutStepIdx=-1;
+  tutNextStep();
+}
+const TUT_STEPS=[
+  {target:()=>document.getElementById('tutCellTarget'),text:'여기를 눌러 돌을 놓을 위치를 정해보세요.',
+    onClick(){document.getElementById('tutPreviewStone').classList.add('show');const b=document.getElementById('tutPlaceBtn');b.style.display='';b.disabled=false;}},
+  {target:()=>document.getElementById('tutPlaceBtn'),text:'이 버튼을 눌러 착수를 확정하세요.',
+    onClick(){document.getElementById('tutPreviewStone').classList.remove('preview');document.getElementById('tutPlaceBtn').style.display='none';
+      document.getElementById('tutTurnLabel').textContent='백의 턴';document.getElementById('tutTurnStone').className='turn-stone-sm w';tutFlash('착수 완료!');}},
+  {target:()=>document.getElementById('tutCard0'),text:'이건 당신의 패(카드)입니다. 카드를 눌러보세요.',
+    onClick(){const el=document.getElementById('tutCard0');if(el)el.classList.add('selected');document.getElementById('tutUseCardBtn').style.display='';}},
+  {target:()=>document.getElementById('tutUseCardBtn'),text:'선택한 카드의 능력을 사용하려면 이 버튼을 누르세요.',
+    onClick(){tutFlash('✦ 능력 발동!');const el=document.getElementById('tutCard0');if(el)el.remove();document.getElementById('tutUseCardBtn').style.display='none';}},
+  {target:()=>document.getElementById('tutCard1'),text:'이제 카드 합성을 배워볼게요. 같은 성급 카드를 눌러 선택해보세요.',
+    onClick(){const el=document.getElementById('tutCard1');if(el)el.classList.add('selected');}},
+  {target:()=>document.getElementById('tutMs0'),text:'선택한 카드를 합성 슬롯에 넣어보세요.',
+    onClick(){const c=TUT_CARDS_INIT[1];const slot=document.getElementById('tutMs0');slot.classList.add('filled');slot.textContent=c.name+' '+STAR_CHAR[c.star];const el=document.getElementById('tutCard1');if(el)el.remove();}},
+  {target:()=>document.getElementById('tutCard2'),text:'같은 성급의 카드를 하나 더 선택해보세요.',
+    onClick(){const el=document.getElementById('tutCard2');if(el)el.classList.add('selected');}},
+  {target:()=>document.getElementById('tutMs1'),text:'두 번째 카드도 합성 슬롯에 넣어보세요.',
+    onClick(){const c=TUT_CARDS_INIT[2];const slot=document.getElementById('tutMs1');slot.classList.add('filled');slot.textContent=c.name+' '+STAR_CHAR[c.star];const el=document.getElementById('tutCard2');if(el)el.remove();document.getElementById('tutMergeBtn').disabled=false;}},
+  {target:()=>document.getElementById('tutMergeBtn'),text:'합성 버튼을 눌러 두 카드를 하나로 합쳐보세요!',
+    onClick(){tutFlash('✦ 합성 성공!');const s0=document.getElementById('tutMs0'),s1=document.getElementById('tutMs1');s0.className='merge-slot';s0.textContent='+';s1.className='merge-slot';s1.textContent='+';document.getElementById('tutMergeBtn').disabled=true;
+      const div=document.createElement('div');div.className='hand-card mine';div.innerHTML=tutCardHTML(TUT_MERGE_RESULT);document.getElementById('tutHandList').appendChild(div);}}
+];
+function tutFlash(text){
+  const f=document.getElementById('tutFlash');
+  document.getElementById('tutFlashText').textContent=text;
+  f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),750);
+}
+function tutRenderProgress(){
+  document.getElementById('tutProgress').innerHTML=TUT_STEPS.map((_,i)=>`<div class="tut-dot${i===tutStepIdx?' active':''}"></div>`).join('');
+}
+function tutStripIds(el){el.removeAttribute('id');el.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));}
+function tutClearSpotlight(){
+  document.getElementById('tutContent').classList.remove('blurred');
+  document.getElementById('tutDim').classList.remove('active');
+  document.getElementById('tutSpotLayer').innerHTML='';
+  tutCalloutEl=null;
+}
+function tutNextStep(){
+  tutClearSpotlight();
+  tutStepIdx++;
+  tutRenderProgress();
+  if(tutStepIdx>=TUT_STEPS.length){
+    document.getElementById('tutContent').style.display='none';
+    document.getElementById('tutFinal').style.display='flex';
+    return;
+  }
+  setTimeout(()=>tutShowStep(tutStepIdx),260);
+}
+function tutShowStep(idx){
+  const step=TUT_STEPS[idx];
+  const target=step.target();
+  if(!target){tutNextStep();return;}
+  const stage=document.getElementById('tutStage');
+  document.getElementById('tutContent').classList.add('blurred');
+  document.getElementById('tutDim').classList.add('active');
+  const stageRect=stage.getBoundingClientRect();
+  const rect=target.getBoundingClientRect();
+  const clone=target.cloneNode(true);
+  tutStripIds(clone);
+  clone.className=(target.className+' tut-clone').trim();
+  clone.style.position='absolute';
+  clone.style.left=(rect.left-stageRect.left)+'px';
+  clone.style.top=(rect.top-stageRect.top)+'px';
+  clone.style.width=rect.width+'px';
+  clone.style.height=rect.height+'px';
+  clone.style.margin='0';
+  clone.style.filter='none';
+  clone.onclick=(e)=>{e.stopPropagation();step.onClick();tutNextStep();};
+  document.getElementById('tutSpotLayer').appendChild(clone);
+  const callout=document.createElement('div');
+  callout.className='tut-callout';
+  callout.innerHTML=step.text+'<span class="tut-tap-hint">👆 눌러서 진행하기</span><div class="tut-callout-arrow"></div>';
+  document.getElementById('tutSpotLayer').appendChild(callout);
+  const stageH=stageRect.height;
+  const targetTop=rect.top-stageRect.top;
+  const targetBottom=rect.bottom-stageRect.top;
+  const calloutW=200;
+  let left=(rect.left-stageRect.left)+rect.width/2-calloutW/2;
+  left=Math.max(8,Math.min(left,stageRect.width-calloutW-8));
+  callout.style.left=left+'px';
+  if(targetTop>stageH/2){
+    callout.classList.add('arrow-bottom');
+    requestAnimationFrame(()=>{const h=callout.offsetHeight;callout.style.top=Math.max(4,targetTop-h-14)+'px';callout.classList.add('show');});
+  }else{
+    callout.classList.add('arrow-top');
+    callout.style.top=(targetBottom+14)+'px';
+    requestAnimationFrame(()=>callout.classList.add('show'));
+  }
+  tutCalloutEl=callout;
+}
 document.addEventListener('DOMContentLoaded',()=>{
   drawMenuBoard();
   initFirebase();
