@@ -3151,9 +3151,10 @@ function drawBoard(){
   }
   if(clickState&&clickState.mode){
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(isValidTarget(r,c)){ctx.fillStyle='rgba(184,134,11,0.17)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);}}
-    // ── 스킬 범위 호버 미리보기 ──
-    if(hoverCell&&clickState.collected.length===0){
-      const{r:hr,c:hc}=hoverCell;
+    // ── 스킬 범위 호버 미리보기 (선택 완료 후에는 확정된 칸 기준으로 계속 표시) ──
+    const _previewCell=clickState.collected.length>0?{r:clickState.collected[0][0],c:clickState.collected[0][1]}:hoverCell;
+    if(_previewCell){
+      const{r:hr,c:hc}=_previewCell;
       const eff=clickState._skillEff||'';
       // 자폭 (3×3 주변 제거 범위)
       if(eff==='self_destruct'&&board[hr][hc]===currentPlayer){
