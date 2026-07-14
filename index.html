@@ -3669,7 +3669,8 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       if(c-1>=0&&board[r][c-1]!==opp)board[r][c-1]=p;
       if(c+1<BS&&board[r][c+1]!==opp)board[r][c+1]=p;
       // [버그수정] 분열 후 승리 체크
-      if((c-1>=0&&board[r][c-1]===p&&checkWin(r,c-1,p))||(c+1<BS&&board[r][c+1]===p&&checkWin(r,c+1,p))){showWin(p);return;}
+      if(c-1>=0&&board[r][c-1]===p&&checkWin(r,c-1,p)){_lastWinCells=findWinCells(r,c-1,p,board,BS,isExiled);showWin(p);return;}
+      if(c+1<BS&&board[r][c+1]===p&&checkWin(r,c+1,p)){_lastWinCells=findWinCells(r,c+1,p,board,BS,isExiled);showWin(p);return;}
       setStatus('분열(가로)!');endGoPlace();
     }],
     // 분열(세로): 선택 돌 제거 후 위아래에 내 돌 배치.
@@ -3680,7 +3681,8 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       if(r-1>=0&&board[r-1][c]!==opp)board[r-1][c]=p;
       if(r+1<BS&&board[r+1][c]!==opp)board[r+1][c]=p;
       // [버그수정] 분열 후 승리 체크
-      if((r-1>=0&&board[r-1][c]===p&&checkWin(r-1,c,p))||(r+1<BS&&board[r+1][c]===p&&checkWin(r+1,c,p))){showWin(p);return;}
+      if(r-1>=0&&board[r-1][c]===p&&checkWin(r-1,c,p)){_lastWinCells=findWinCells(r-1,c,p,board,BS,isExiled);showWin(p);return;}
+      if(r+1<BS&&board[r+1][c]===p&&checkWin(r+1,c,p)){_lastWinCells=findWinCells(r+1,c,p,board,BS,isExiled);showWin(p);return;}
       setStatus('분열(세로)!');endGoPlace();
     }],
     sanctuary:['any',1,(cs)=>{const[r,c]=cs[0];sanctuaryZones.push({r:Math.min(r,BS-2),c:Math.min(c,BS-2),turns:6});setStatus('보호구역!');endGoPlace();}],
@@ -3706,7 +3708,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       }
       setStatus('자폭!');endGoPlace();
     }],
-    extra_place:['empty',1,(cs)=>{const[r,c]=cs[0];board[r][c]=p;if(checkWin(r,c,p)){showWin(p);return;}setStatus('설치! 착수도 가능합니다.');endGoPlace();}],
+    extra_place:['empty',1,(cs)=>{const[r,c]=cs[0];board[r][c]=p;if(checkWin(r,c,p)){_lastWinCells=findWinCells(r,c,p,board,BS,isExiled);showWin(p);return;}setStatus('설치! 착수도 가능합니다.');endGoPlace();}],
     // 공허: 3×3 영역 돌 전부 즉시 제거 + 3턴 동안 해당 영역 사용 불가
     void_zone:['any',1,(cs)=>{
       const[r,c]=cs[0];
@@ -3788,14 +3790,15 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
         return;
       }
       board[r1][c1]=p;board[r2][c2]=p;
-      if(checkWin(r1,c1,p)||checkWin(r2,c2,p)){showWin(p);return;}
+      if(checkWin(r1,c1,p)){_lastWinCells=findWinCells(r1,c1,p,board,BS,isExiled);showWin(p);return;}
+      if(checkWin(r2,c2,p)){_lastWinCells=findWinCells(r2,c2,p,board,BS,isExiled);showWin(p);return;}
       setStatus('불안정한 두 돌!');endGoPlace();
     }};
     drawBoard();
   };
   pickFirst();return;}
   if(eff==='area_swap'){let f2=null;startClick('any',1,(cs)=>{const[r,c]=cs[0];f2=[Math.min(r,BS-2),Math.min(c,BS-2)];showSkillConfirmBtn(false);clickState={mode:'any',max:1,collected:[],_skillEff:'area_swap',callback:(cs2)=>{const[r3,c3]=cs2[0];const[nr2,nc2]=[Math.min(r3,BS-2),Math.min(c3,BS-2)];const[r1a,c1a]=f2;for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const k1=(r1a+dr)+','+(c1a+dc),k2=(nr2+dr)+','+(nc2+dc);const tmp=board[r1a+dr][c1a+dc];board[r1a+dr][c1a+dc]=board[nr2+dr][nc2+dc];board[nr2+dr][nc2+dc]=tmp;const ft1=fortified[k1],ft2=fortified[k2];if(ft2)fortified[k1]=ft2;else delete fortified[k1];if(ft1)fortified[k2]=ft1;else delete fortified[k2];}// [버그수정] area_swap 후 승리 체크
-let won=false;for(let dr=0;dr<2&&!won;dr++)for(let dc=0;dc<2&&!won;dc++){const rr1=r1a+dr,cc1=c1a+dc,rr2=nr2+dr,cc2=nc2+dc;if(board[rr1][cc1]&&checkWin(rr1,cc1,board[rr1][cc1])){showWin(board[rr1][cc1]);won=true;}else if(!won&&board[rr2][cc2]&&checkWin(rr2,cc2,board[rr2][cc2])){showWin(board[rr2][cc2]);won=true;}}if(won)return;setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();},'area_swap');return;}
+let won=false;for(let dr=0;dr<2&&!won;dr++)for(let dc=0;dc<2&&!won;dc++){const rr1=r1a+dr,cc1=c1a+dc,rr2=nr2+dr,cc2=nc2+dc;if(board[rr1][cc1]&&checkWin(rr1,cc1,board[rr1][cc1])){_lastWinCells=findWinCells(rr1,cc1,board[rr1][cc1],board,BS,isExiled);showWin(board[rr1][cc1]);won=true;}else if(!won&&board[rr2][cc2]&&checkWin(rr2,cc2,board[rr2][cc2])){_lastWinCells=findWinCells(rr2,cc2,board[rr2][cc2],board,BS,isExiled);showWin(board[rr2][cc2]);won=true;}}if(won)return;setStatus('영역 전환!');endGoPlace();}};setStatus('두 번째 2×2 좌상단을 클릭합니다.');drawBoard();},'area_swap');return;}
   endGoPlace();
 }
 function showSkillConfirmBtn(show){
@@ -3874,7 +3877,7 @@ function doPlaceStone(r,c){
 
   // 예언자 효과: 내가 착수한 칸에 상대 예언이 있으면 취소
   if(prophetCells[k]&&prophetCells[k].owner!==p)delete prophetCells[k];
-  if(checkWin(r,c,p)){showWin(p);return;}
+  if(checkWin(r,c,p)){_lastWinCells=findWinCells(r,c,p,board,BS,isExiled);showWin(p);return;}
 
   // 온라인: 상태는 endTurn() 완료 시 onlineSyncAfterTurn()에서 일괄 동기화
 
@@ -4183,7 +4186,7 @@ function endTurn(){
   sanctuaryZones=sanctuaryZones.map(z=>({...z,turns:z.turns-1})).filter(z=>z.turns>0);
   voidZones=voidZones.map(z=>({...z,turns:z.turns-1})).filter(z=>z.turns>0);
   const exCheck=[];Object.keys(exiledCells).forEach(k=>{exiledCells[k].turns--;if(exiledCells[k].turns<=0){exCheck.push(k);delete exiledCells[k];}});
-  exCheck.forEach(k=>{const[r,c]=k.split(',').map(Number);if(board[r][c]!==0&&checkWin(r,c,board[r][c]))showWin(board[r][c],'왕따 해제 후 5목!');});
+  exCheck.forEach(k=>{const[r,c]=k.split(',').map(Number);if(board[r][c]!==0&&checkWin(r,c,board[r][c])){_lastWinCells=findWinCells(r,c,board[r][c],board,BS,isExiled);showWin(board[r][c],'왕따 해제 후 5목!');}});
   if(irrationalTurns[pKey]>0)irrationalTurns[pKey]--;
   if(blindTurns>0)blindTurns--;
   if(evadeEffect){evadeEffect.turns--;if(evadeEffect.turns<=0)evadeEffect=null;}
@@ -4195,7 +4198,7 @@ function endTurn(){
   ['bPlaceBtn','wPlaceBtn'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.disabled=true;}});
   ['bUseCardBtn','wUseCardBtn'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   if(constructionMark&&constructionMark.forPlayer===currentPlayer){const fk=constructionMark.key;constructionMark=null;const[fr,fc]=fk.split(',').map(Number);if(board[fr][fc]===currentPlayer){forceConstr(fr,fc);return;}}
-  Object.entries(prophetCells).forEach(([k,info])=>{if(info.owner===currentPlayer){info.turnsLeft--;if(info.turnsLeft<=0){const[r,c]=k.split(',').map(Number);if(board[r][c]===0&&!isCellBanned(r,c)){board[r][c]=currentPlayer;if(checkWin(r,c,currentPlayer))showWin(currentPlayer,'예언자로 승리!');}delete prophetCells[k];}}});
+  Object.entries(prophetCells).forEach(([k,info])=>{if(info.owner===currentPlayer){info.turnsLeft--;if(info.turnsLeft<=0){const[r,c]=k.split(',').map(Number);if(board[r][c]===0&&!isCellBanned(r,c)){board[r][c]=currentPlayer;if(checkWin(r,c,currentPlayer)){_lastWinCells=findWinCells(r,c,currentPlayer,board,BS,isExiled);showWin(currentPlayer,'예언자로 승리!');}}delete prophetCells[k];}}});
   // 폭탄 폭발: 설치된 폭탄의 turns가 0이 되면 범위 내 돌 전부 제거
   // bomb.size=2 → 2×2 범위(소형), size=3 → 3×3 범위(대형)
   const explodeNow=[];
@@ -5029,6 +5032,14 @@ function cIsRenjuForbidden(r,c,bd){
   // 임시로 놔봄
   const tmp=bd.map(row=>[...row]);
   tmp[r][c]=1;
+  // [버그수정] 이 수로 정확히 5목이 완성되면(승리) 다른 방향의 3-3/4-4와 무관하게 항상 유효한 수 (렌주룰: 오목 완성이 금수보다 우선)
+  const dirs4=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const[dr,dc]of dirs4){
+    let cnt=1;
+    for(let i=1;i<9;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||tmp[nr][nc]!==1)break;cnt++;}
+    for(let i=1;i<9;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=C_BS||nc<0||nc>=C_BS||tmp[nr][nc]!==1)break;cnt++;}
+    if(cnt===5)return false;
+  }
   // 장목 (흑이 6개 이상 일렬)
   if(cCountLine(r,c,1,tmp)>=6)return true;
   // 열린 4(삼) 개수 세기 → 4-4 판정
