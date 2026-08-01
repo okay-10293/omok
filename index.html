@@ -237,6 +237,8 @@ button,input{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .book-card-top{display:flex;justify-content:space-between;align-items:flex-start;}
 .book-card-name{font-size:13px;font-weight:700;}
 .book-card-desc{font-size:11px;color:var(--text2);line-height:1.5;}
+.book-trial-btn{margin-top:8px;width:100%;padding:7px;border:1px solid var(--accent2);border-radius:8px;background:var(--panel);color:var(--accent2);font-size:11.5px;font-weight:700;transition:background .15s;}
+.book-trial-btn:active{background:var(--accent);color:#fff;}
 .book-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700;margin-top:2px;}
 /* ONLINE */
 #page-online{align-items:center;justify-content:center;background:var(--bg);}
@@ -762,6 +764,20 @@ canvas#boardCanvas{display:block;touch-action:none;}
   </div>
 </div>
 
+<!-- 로그인 필요 안내 모달 (비로그인 방문자가 플레이 버튼을 눌렀을 때) -->
+<div class="modal-overlay" id="loginRequiredModal">
+  <div class="modal-box" style="max-width:340px;text-align:center;">
+    <div style="display:flex;justify-content:flex-end;">
+      <button onclick="closeLoginRequiredModal()" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="font-size:34px;margin-bottom:10px;">🔒</div>
+    <h3 style="margin-bottom:8px;">로그인 후 이용해주세요</h3>
+    <p style="font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:18px;">대전을 시작하려면 로그인하거나<br>게스트로 바로 시작할 수 있어요.</p>
+    <button class="auth-submit-btn" onclick="goToLoginFromPrompt()">로그인 / 회원가입</button>
+    <button class="auth-guest-btn" style="margin-top:8px;" onclick="closeLoginRequiredModal();loginAsGuest();">게스트로 바로 시작</button>
+  </div>
+</div>
+
 <!-- AI 난이도 선택 모달 -->
 <div class="modal-overlay" id="aiDiffModal">
   <div class="modal-box" style="max-width:340px;">
@@ -1060,7 +1076,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
         </div>
       </div>
     </div>
-    <div class="top-profile" id="topProfile" onclick="if(currentUserData&&!currentUserData.isGuest)showPage('page-settings');else if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');}">
+    <div class="top-profile" id="topProfile" onclick="handleTopProfileClick()">
       <div class="top-profile-avatar" id="menuAvatar">?</div>
       <div class="top-profile-info">
         <div class="top-profile-name" id="menuNickname">-</div>
@@ -1072,8 +1088,8 @@ canvas#boardCanvas{display:block;touch-action:none;}
     <div class="menu-logo"><h1>전략적 오목</h1><p>Strategic Omok</p></div>
     <canvas id="menuCanvas" width="180" height="180" style="border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.13);"></canvas>
     <div class="menu-btn-group">
-      <button class="menu-btn primary" onclick="document.getElementById('playModeModal').classList.add('show');filterPlayModeModal('strategic')" style="padding:18px;font-size:18px;">전략적 오목 플레이</button>
-      <button class="menu-btn secondary" onclick="document.getElementById('playModeModal').classList.add('show');filterPlayModeModal('classic')" style="padding:14px;font-size:16px;">클래식 오목 플레이</button>
+      <button class="menu-btn primary" onclick="openPlayModePrompt('strategic')" style="padding:18px;font-size:18px;">전략적 오목 플레이</button>
+      <button class="menu-btn secondary" onclick="openPlayModePrompt('classic')" style="padding:14px;font-size:16px;">클래식 오목 플레이</button>
     </div>
   </div>
   <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
@@ -1907,6 +1923,15 @@ async function submitNickname(){
   closeModal('nickModal');
   showMenuWithUser();
 }
+function showMenuAsVisitor(){
+  // 로그인도 게스트도 아닌 '첫 방문' 상태 — 게임 화면은 보여주되, 실제 플레이는 로그인/게스트 시작 시점에 확정한다.
+  document.getElementById('menuAvatar').textContent='?';
+  document.getElementById('menuNickname').textContent='로그인이 필요합니다';
+  document.getElementById('menuRecord').textContent='탭하여 로그인 / 게스트로 시작';
+  const friendsBtn=document.getElementById('menuFriendsBtn');
+  if(friendsBtn)friendsBtn.style.display='none';
+  showPage('page-menu');
+}
 function loginAsGuest(){
   window._isGuestMode=true;
   currentUser=null;currentUserData=null;
@@ -1986,7 +2011,7 @@ async function onAuthChanged(user){
   currentUser=user;
   if(!user){
     if(window._isGuestMode)return;
-    showPage('page-auth');return;
+    showMenuAsVisitor();return;
   }
   // 회원가입 진행 중이면 onAuthChanged가 createUserWithEmailAndPassword 직후
   // 즉시 발동되므로, DB 저장이 끝날 때까지 여기서 처리하지 않음
@@ -2049,7 +2074,28 @@ function showMenuWithUser(){
   showPage('page-menu');
   maybeOfferTutorial();
 }
+function handleTopProfileClick(){
+  if(currentUserData&&!currentUserData.isGuest){showPage('page-settings');return;}
+  if(currentUserData&&currentUserData.isGuest){window._isGuestMode=false;currentUserData=null;currentUser=null;showPage('page-auth');return;}
+  showPage('page-auth'); // 비로그인 방문자
+}
+function openPlayModePrompt(mode){
+  if(!currentUser&&!window._isGuestMode){openLoginRequiredModal();return;}
+  document.getElementById('playModeModal').classList.add('show');
+  filterPlayModeModal(mode);
+}
+function openLoginRequiredModal(){
+  document.getElementById('loginRequiredModal').classList.add('show');
+}
+function closeLoginRequiredModal(){
+  document.getElementById('loginRequiredModal').classList.remove('show');
+}
+function goToLoginFromPrompt(){
+  closeLoginRequiredModal();
+  showPage('page-auth');
+}
 function togglePlayMenu(){
+  if(!currentUser&&!window._isGuestMode){openLoginRequiredModal();return;}
   filterPlayModeModal('strategic');
   document.getElementById('playModeModal').classList.add('show');
 }
@@ -2530,9 +2576,42 @@ function renderBook(){
       <span class="book-badge" style="background:#f5f5f5;color:#666;margin-left:2px">${c.tag}</span>
       <span class="book-badge" style="background:#f0f0f0;color:#888;margin-left:2px">x${c.count}</span></div>
       <div class="book-card-desc">${c.desc}</div>
+      <button class="book-trial-btn" onclick="startCardTrial('${c.id}')">🧪 체험하기</button>
     </div>`).join('');
 }
 function setBookFilter(n){bookFilter=n;renderBook();}
+function startCardTrial(cardId){
+  const card=CARDS_DEF.find(c=>c.id===cardId);
+  if(!card)return;
+  window._practiceMode=true;
+  showPage('page-game');
+  initGame({nicknames:{black:'체험 모드',white:'상대(연습용)'}});
+  // 카드 효과를 곧바로 시험해볼 수 있도록 패를 채우고, 보드에 연습용 돌을 몇 개 미리 깔아준다.
+  const makeTrialCard=()=>({...card,uid:card.id+'_trial_'+Math.random().toString(36).slice(2)});
+  hands.black=[makeTrialCard(),makeTrialCard(),makeTrialCard()];
+  hands.white=[makeTrialCard()];
+  const seed=[[7,7,1],[7,8,2],[8,7,2],[6,6,1],[9,9,2],[5,8,1]];
+  seed.forEach(([r,c,p])=>{board[r][c]=p;});
+  renderAll();
+  showPracticeBanner(card.name);
+}
+function showPracticeBanner(cardName){
+  let el=document.getElementById('practiceBanner');
+  if(!el){
+    el=document.createElement('div');
+    el.id='practiceBanner';
+    el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:600;background:var(--accent);color:#fff;padding:9px 14px;font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+    document.body.appendChild(el);
+  }
+  el.innerHTML=`<span>🧪 체험 모드 — '${cardName}' 카드를 자유롭게 사용해보세요 (승패는 상관없어요)</span><button onclick="exitPracticeMode()" style="background:rgba(255,255,255,0.25);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:700;flex:none;">나가기</button>`;
+  el.style.display='flex';
+}
+function exitPracticeMode(){
+  window._practiceMode=false;
+  const el=document.getElementById('practiceBanner');
+  if(el)el.style.display='none';
+  showPage('page-book');
+}
 
 // ── Game state ────────────────────────────────────────
 // BS: 보드 사이즈 (15×15 표준 오목)
@@ -4332,7 +4411,9 @@ function doomApply(dir,side){
 // ── Status / quit ─────────────────────────────────────
 function setStatus(msg){const el=document.getElementById('statusBar');if(el)el.innerHTML=msg;}
 function confirmQuit(){document.getElementById('quitModal').classList.add('show');}
-function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
+function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
+  if(window._practiceMode){exitPracticeMode();return;}
+  if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showMenuAsVisitor();}}
 function startLocalGame(){onlineRoomId=null;onlineMyRole=null;const nick=currentUserData?currentUserData.nickname:'플레이어';showPage('page-game');initGame({nicknames:{black:nick+'(흑)',white:nick+'(백)'}});}
 
 // ── Online (Full State Sync) ──────────────────────────
