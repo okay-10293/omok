@@ -3403,7 +3403,10 @@ function drawBoard(){
     }
   }
 }
-function isValidTarget(r,c){if(!clickState)return false;const m=clickState.mode;if(m==='empty'){if(clickState.moveRange)return clickState.moveRange.some(([mr,mc])=>mr===r&&mc===c);return board[r][c]===0;}if(m==='own')return board[r][c]===currentPlayer;if(m==='opp')return board[r][c]===getOpp(currentPlayer);if(m==='stone')return board[r][c]!==0;return true;}
+function isValidTarget(r,c){if(!clickState)return false;const m=clickState.mode;if(m==='empty'){if(clickState.moveRange)return clickState.moveRange.some(([mr,mc])=>mr===r&&mc===c);return board[r][c]===0;}if(m==='own')return board[r][c]===currentPlayer;if(m==='opp')return board[r][c]===getOpp(currentPlayer);if(m==='stone'){if(board[r][c]===0)return false;
+  // [버그수정] 굳힌 돌은 제거 계열 효과(제거/연쇄)의 대상으로 선택할 수 없다 (굳히기 카드의 보호 규칙과 일치시킴)
+  if((clickState._skillEff==='remove'||clickState._skillEff==='chain')&&isFort(r,c))return false;
+  return true;}return true;}
 
 // ── Board events ──────────────────────────────────────
 function initBoardEvents(){
@@ -3851,6 +3854,8 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       const[nr,nc]=cs2[0];
       board[nr][nc]=board[r][c];board[r][c]=0;
       if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}
+      // [버그수정] 돌 이동 후 승리 체크 누락
+      if(checkWin(nr,nc,p)){_lastWinCells=findWinCells(nr,nc,p,board,BS,isExiled);showWin(p);return;}
       setStatus('돌 이동!');endGoPlace();
     }};
     setStatus('파란 칸을 클릭해 이동할 위치를 선택하세요.');drawBoard();
