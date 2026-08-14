@@ -3187,7 +3187,7 @@ function drawBoard(){
         });
       }
       // 연쇄 체인
-      if(eff==='chain'&&board[hr][hc]!==0){
+      if(eff==='chain'&&board[hr][hc]!==0&&!isFort(hr,hc)){
         const q=[[hr,hc]],vis=new Set([hr+','+hc]),chain=[[hr,hc]];
         while(q.length){
           const[cr,cc]=q.shift();
@@ -3339,7 +3339,7 @@ function drawBoard(){
         });
       }
       // 연쇄 체인 — 호버 돌에서 BFS 연결 경로 미리보기
-      if(eff==='chain'&&board[hr][hc]!==0){
+      if(eff==='chain'&&board[hr][hc]!==0&&!isFort(hr,hc)){
         const q=[[hr,hc]],vis=new Set([hr+','+hc]),chain=[[hr,hc]];
         while(q.length){
           const[cr,cc]=q.shift();
@@ -3857,7 +3857,12 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       setStatus(`연쇄 체인! ${rem.length}개 제거.`);endGoPlace();
     }],
   };
-  if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&board[nr][nc]===p)fortified[nr+','+nc]=4;}setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();},'protect_order');return;}
+  if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];
+    // [버그수정] 미리보기(좌상단 기준 3x3, 보드 경계 클램프)와 실제 적용 범위가 어긋나 있던 문제 수정.
+    // 기존엔 클릭한 칸을 '중심'으로 -1~+1 계산해서, 미리보기가 보여준 영역과 실제 굳혀지는 영역이 달랐음.
+    const tr=Math.min(r,BS-3),tc=Math.min(c,BS-3);
+    for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){const nr=tr+dr,nc=tc+dc;if(board[nr][nc]===p)fortified[nr+','+nc]=4;}
+    setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();},'protect_order');return;}
   if(eff==='blind'){blindTurns=4;setStatus('블라인드 발동! 2턴 동안 상대에게 카드 정보가 숨겨집니다.');endGoPlace();return;}
   if(CE[eff]){const[mode,max,cb]=CE[eff];startClick(mode,max,cb,eff);
     if(eff==='bomb_s')clickState.bombSize=2;
