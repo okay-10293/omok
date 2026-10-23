@@ -1253,7 +1253,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
     <div id="lobbyPanelCode" style="display:none;">
       <div class="online-section">
         <div class="online-section-title">방 코드로 입장</div>
-        <input id="roomCodeInput" type="text" maxlength="6" placeholder="방 코드 6자리"
+        <input id="roomCodeInput" type="text" maxlength="7" placeholder="방 코드 (6~7자리)"
           style="padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:5px;text-align:center;font-family:monospace;text-transform:uppercase;outline:none;width:100%;"
           oninput="this.value=this.value.toUpperCase()">
         <button class="menu-btn primary" onclick="joinOnlineRoom()">입장하기</button>
@@ -4444,7 +4444,7 @@ function doomApply(dir,side){
 // ── Status / quit ─────────────────────────────────────
 function setStatus(msg){const el=document.getElementById('statusBar');if(el)el.innerHTML=msg;}
 function confirmQuit(){document.getElementById('quitModal').classList.add('show');}
-function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
+function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
   if(window._practiceMode){exitPracticeMode();return;}
   if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showMenuAsVisitor();}}
 function startLocalGame(){onlineRoomId=null;onlineMyRole=null;const nick=currentUserData?currentUserData.nickname:'플레이어';showPage('page-game');initGame({nicknames:{black:nick+'(흑)',white:nick+'(백)'}});}
@@ -4670,7 +4670,7 @@ function joinOnlineRoom(){
   if(!db){alert('Firebase 초기화 실패');return;}
   const code=document.getElementById('roomCodeInput').value.trim().toUpperCase();
   const msgEl=document.getElementById('joinMsg');
-  if(code.length!==6){msgEl.textContent='6자리 코드를 입력하세요.';msgEl.style.display='block';return;}
+  if(code.length!==6&&code.length!==7){msgEl.textContent='방 코드를 입력하세요. (전략적 6자리, 클래식 7자리)';msgEl.style.display='block';return;}
   db.ref('rooms/'+code).once('value').then(snap=>{
     const room=snap.val();
     if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
@@ -4682,7 +4682,7 @@ function joinOnlineRoom(){
     db.ref('rooms/'+code).update(updates).then(()=>{
       msgEl.textContent='입장 성공! 대기 중...';msgEl.style.color='#2e7d32';msgEl.style.display='block';
       db.ref('rooms/'+code+'/status').on('value',snap2=>{
-        if(snap2.val()==='playing')setTimeout(()=>startOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null),400);
+        if(snap2.val()==='playing')setTimeout(()=>{if(room.classic)startClassicOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null);else startOnlineGame(code,'white',room.blackNick,myNick,room.blackUid||null,null);},400);
       });
     });
   }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
@@ -5123,8 +5123,8 @@ function cPlaceStone(r,c){
     if(cIsOnline)cPushState();
     return;
   }
-  if(cIsOnline)cPushState();
   cEndTurn();
+  if(cIsOnline)cPushState(); // 턴 전환 후에 올려야 상대가 자기 차례로 인식함
 }
 function cCheckWin(r,c,p){
   return cGetWinStones(r,c,p,cBoard).length>0;
@@ -6024,8 +6024,8 @@ function cAppendClassicChat(d){
   else{
     const isMe=d.role===cMyRole;
     div.className='chat-msg '+(isMe?'me':'opp');
-    const nick=document.createElement('span');nick.className='chat-nick';nick.textContent=escHtml(d.nick||d.role);
-    div.appendChild(nick);div.appendChild(document.createTextNode(escHtml(d.text)));
+    const nick=document.createElement('span');nick.className='chat-nick';nick.textContent=(d.nick||d.role);
+    div.appendChild(nick);div.appendChild(document.createTextNode(d.text));
   }
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
@@ -6103,8 +6103,8 @@ function appendChatMsg(d){
     div.className='chat-msg '+(isMe?'me':'opp');
     const nickSpan=document.createElement('span');
     nickSpan.className='chat-nick';
-    nickSpan.textContent=escHtml(d.nick||d.role);
-    const textNode=document.createTextNode(escHtml(d.text));
+    nickSpan.textContent=(d.nick||d.role);
+    const textNode=document.createTextNode(d.text);
     div.appendChild(nickSpan);div.appendChild(textNode);
   }
   messages.appendChild(div);
