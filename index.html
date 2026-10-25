@@ -2099,7 +2099,7 @@ function showMenuWithUser(){
   listenFriendGameInvites();
   showPage('page-menu');
   refreshResumeBtn();
-  if(!window._resumeAsked){window._resumeAsked=true;if(getResume())setTimeout(()=>{if(getResume()&&confirm('진행 중이던 온라인 대전이 있습니다. 이어서 할까요?'))resumeOnlineGame();},300);} // 페이지를 새로 열었을 때 한 번만 묻는다 (직접 나간 경우엔 메뉴 버튼으로)
+  if(!window._resumeAsked){window._resumeAsked=true;if(getResume())setTimeout(()=>resumeOnlineGame(true),300);} // 페이지를 새로 열었을 때 한 번만 자동으로 이어서 들어간다 (직접 나간 경우엔 메뉴 버튼으로)
   maybeOfferTutorial();
 }
 function handleTopProfileClick(){
@@ -4731,11 +4731,11 @@ function refreshResumeBtn(){
   if(b)b.style.display=getResume()?'block':'none';
 }
 function isOwnRoom(room){return !!(room&&currentUser&&room.blackUid&&room.blackUid===currentUser.uid);}
-async function resumeOnlineGame(){
+async function resumeOnlineGame(silent){
   const r=getResume();
   if(!r||!db)return;
   const ok=await holdGameLock(r.code);
-  if(!ok){alert('이 대전은 다른 창에서 이미 진행 중입니다.');return;}
+  if(!ok){if(!silent)alert('이 대전은 다른 창에서 이미 진행 중입니다.');return;}
   let room=null;
   try{room=(await db.ref('rooms/'+r.code).once('value')).val();}catch(e){}
   const key=r.type==='classic'?'cState':'gameState';
@@ -4743,7 +4743,7 @@ async function resumeOnlineGame(){
   if(!finished&&room[key]&&room[key].data){
     try{const st=JSON.parse(room[key].data);finished=!!(st.winnerPlayer||st.winner||st.winnerDetermined);}catch(e){}
   }
-  if(finished){clearResume();alert('이미 끝났거나 사라진 대전입니다.');return;}
+  if(finished){clearResume();if(!silent)alert('이미 끝났거나 사라진 대전입니다.');return;}
   if(r.type==='classic')startClassicOnlineGame(r.code,r.role,room.blackNick,room.whiteNick,room.blackUid||null,room.whiteUid||null,true);
   else startOnlineGame(r.code,r.role,room.blackNick,room.whiteNick,room.blackUid||null,room.whiteUid||null,true);
 }
