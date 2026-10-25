@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>전략적 오목</title>
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Do+Hyeon&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800;900&family=Do+Hyeon&display=swap" rel="stylesheet">
 <!-- Firebase SDKs — must load before game script -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -15,8 +15,8 @@
 <style>
 :root{--bg:#f5f3ef;--bg2:#eceae4;--board-bg:#c8a96e;--ui-bg:#ffffff;--border:#d8d2c8;--border2:#b8b0a0;--panel:#fafaf8;--text:#1a1814;--text2:#6b6358;--text3:#a09888;--accent:#b8860b;--accent2:#8b5e0a;--red:#c62828;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:'Nanum Gothic',sans-serif;min-height:100vh;overflow-x:hidden;}
-button,input{cursor:pointer;font-family:'Nanum Gothic',sans-serif;}
+body{background:var(--bg);color:var(--text);font-family:'Gothic A1',sans-serif;min-height:100vh;overflow-x:hidden;}
+button,input{cursor:pointer;font-family:'Gothic A1',sans-serif;}
 .page{display:none;min-height:100vh;}
 .loading-spinner{width:34px;height:34px;border:3.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -2996,7 +2996,7 @@ function showTrapEffect(r,c){
 
   // 중심 폭발 원
   const el=document.createElement('div');
-  el.style.cssText=`position:fixed;left:${x-40}px;top:${y-40}px;width:80px;height:80px;border-radius:50%;background:rgba(230,81,0,0.85);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:900;z-index:800;pointer-events:none;animation:trapPop 0.6s ease-out forwards;font-family:Nanum Gothic,sans-serif;`;
+  el.style.cssText=`position:fixed;left:${x-40}px;top:${y-40}px;width:80px;height:80px;border-radius:50%;background:rgba(230,81,0,0.85);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:900;z-index:800;pointer-events:none;animation:trapPop 0.6s ease-out forwards;font-family:Gothic A1,sans-serif;`;
   el.textContent='함정!';
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),700);
@@ -3061,7 +3061,7 @@ function showStoneRemoveEffect(r,c,player){
 }
 function showTimeoutBanner(){
   const banner=document.createElement('div');
-  banner.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#c62828;color:#fff;font-size:18px;font-weight:700;padding:14px 28px;border-radius:10px;z-index:800;font-family:Nanum Gothic,sans-serif;';
+  banner.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#c62828;color:#fff;font-size:18px;font-weight:700;padding:14px 28px;border-radius:10px;z-index:800;font-family:Gothic A1,sans-serif;';
   banner.textContent='시간 초과! 차례가 넘어갑니다.';
   document.body.appendChild(banner);
   setTimeout(()=>banner.remove(),1500);
