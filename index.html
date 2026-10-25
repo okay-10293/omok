@@ -4543,7 +4543,7 @@ function loadLobbyRooms(){
       rooms.push({id:c.key,...v});
     });
     if(rooms.length===0){
-      listEl.innerHTML='<div class="lobby-empty">대기 중인 방이 없습니다.<br>방을 만들어 친구를 기다려보세요!</div>';
+      listEl.innerHTML='<div class="lobby-empty">현재 방이 없습니다.<br>방을 만들어 친구와 플레이 해보세요!</div>';
       return;
     }
     listEl.innerHTML=rooms.map(r=>{
@@ -4564,7 +4564,7 @@ function loadLobbyRooms(){
       </div>`;
     }).join('');
   }).catch(()=>{
-    if(listEl)listEl.innerHTML='<div class="lobby-empty">목록을 불러오지 못했습니다.</div>';
+    if(listEl)listEl.innerHTML='<div class="lobby-empty">현재 방이 없습니다.<br>방을 만들어 친구와 플레이 해보세요!</div>';
   });
 }
 
@@ -5809,7 +5809,7 @@ function loadClassicLobbyRooms(){
       rooms.push({id:c.key,...v});
     });
     if(!rooms.length){
-      listEl.innerHTML='<div class="classic-lobby-empty">대기 중인 방이 없습니다.<br>방을 만들어 상대를 기다려보세요!</div>';
+      listEl.innerHTML='<div class="classic-lobby-empty">현재 방이 없습니다.<br>방을 만들어 친구와 플레이 해보세요!</div>';
       return;
     }
     listEl.innerHTML='';
@@ -5831,7 +5831,7 @@ function loadClassicLobbyRooms(){
       listEl.appendChild(item);
     });
   }).catch(()=>{
-    if(listEl)listEl.innerHTML='<div class="classic-lobby-empty">목록을 불러오지 못했습니다.</div>';
+    if(listEl)listEl.innerHTML='<div class="classic-lobby-empty">현재 방이 없습니다.<br>방을 만들어 친구와 플레이 해보세요!</div>';
   });
 }
 
