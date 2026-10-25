@@ -16,6 +16,8 @@
 <style>
 :root{--bg:#f5f3ef;--bg2:#eceae4;--board-bg:#c8a96e;--ui-bg:#ffffff;--border:#d8d2c8;--border2:#b8b0a0;--panel:#fafaf8;--text:#1a1814;--text2:#6b6358;--text3:#a09888;--accent:#b8860b;--accent2:#8b5e0a;--red:#c62828;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+/* 사파리 더블탭 확대 방지 (보드 캔버스는 개별로 touch-action:none 유지) */
+*,html,body{touch-action:manipulation;}
 body{background:var(--bg);color:var(--text);font-family:'Pretendard',-apple-system,sans-serif;min-height:100vh;overflow-x:hidden;}
 button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 .page{display:none;min-height:100vh;}
@@ -1629,6 +1631,16 @@ function drawBombIcon(ctx,cx,cy,size){
   ctx.beginPath();ctx.arc(fuseX+size*0.06,fuseY-size*0.3,size*0.035,0,Math.PI*2);ctx.fill();
   ctx.restore();
 }
+// ── 사파리 더블탭/핀치 확대 방지 ───────────────────────────
+// viewport 설정과 touch-action 만으로 안 막히는 경우가 있어 JS 로도 막는다.
+['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+let _lastTouchEndAt=0;
+document.addEventListener('touchend',e=>{
+  const now=Date.now();
+  const t=e.target&&e.target.closest?e.target.closest('input,textarea,select'):null;
+  if(!t&&now-_lastTouchEndAt<=500)e.preventDefault();
+  _lastTouchEndAt=now;
+},{passive:false});
 function initFirebase(){
   if(db)return true;
   try{
