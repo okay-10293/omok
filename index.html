@@ -1746,7 +1746,12 @@ async function findAccountId(){
   try{
     // usernames는 ".read":true — 비로그인 상태에서도 접근 가능
     // users는 auth != null 조건이라 비로그인에서 PERMISSION_DENIED 발생
-    const snap=await db.ref('usernames').orderByChild('email').equalTo(email).once('value');
+    let snap=await db.ref('usernames').orderByChild('email').equalTo(email).once('value');
+    if(!snap.exists()){
+      // 예전에 대소문자 그대로 저장된 계정 대비: 입력한 원본 표기로도 한 번 더 조회
+      const rawEmail=document.getElementById('findIdEmail').value.trim();
+      if(rawEmail!==email)snap=await db.ref('usernames').orderByChild('email').equalTo(rawEmail).once('value');
+    }
     if(!snap.exists()){
       errEl.textContent='해당 이메일로 가입된 계정을 찾을 수 없습니다.';
       btn.disabled=false;btn.textContent='아이디 찾기';return;
@@ -1807,6 +1812,7 @@ async function submitAuth(){
   if(authMode==='signup'&&isEmailInput){setAuthErr('아이디는 영문·숫자·_만 사용 가능하며 4~20자여야 합니다.');return;}
   if(!isEmailInput&&!validateId(rawId)){setAuthErr('아이디는 영문·숫자·_만 사용 가능하며 4~20자여야 합니다.');return;}
   const btn=document.getElementById('authSubmitBtn');
+  setAuthErr('');
   btn.disabled=true;btn.textContent='처리 중...';
   if(authMode==='login'){
     try{
@@ -1874,9 +1880,10 @@ async function submitAuth(){
     }
     try{
       await cred.user.getIdToken(true);
-      const userData={nickname:nick,username:rawId.toLowerCase(),email:emailInput,wins:0,losses:0};
+      const emailKey=emailInput.toLowerCase(); // 아이디 찾기가 소문자로 조회하므로 소문자로 저장
+      const userData={nickname:nick,username:rawId.toLowerCase(),email:emailKey,wins:0,losses:0};
       await db.ref('users/'+cred.user.uid).set(userData);
-      await db.ref('usernames/'+rawId.toLowerCase()).set({uid:cred.user.uid,email:emailInput});
+      await db.ref('usernames/'+rawId.toLowerCase()).set({uid:cred.user.uid,email:emailKey});
       window._newAccountFlag=true;
     }catch(e){
       window._isSignup=false;
@@ -2045,15 +2052,21 @@ async function closeEmailVerifyModal(){
     if(btn){btn.disabled=false;btn.textContent=authMode==='login'?'로그인':'회원가입';}
   }
 }
+function resetAuthBtn(){
+  const btn=document.getElementById('authSubmitBtn');
+  if(btn){btn.disabled=false;btn.textContent=authMode==='login'?'로그인':'회원가입';}
+}
 async function onAuthChanged(user){
   currentUser=user;
   if(!user){
+    resetAuthBtn();
     if(window._isGuestMode)return;
     showMenuAsVisitor();return;
   }
   // 회원가입 진행 중이면 onAuthChanged가 createUserWithEmailAndPassword 직후
   // 즉시 발동되므로, DB 저장이 끝날 때까지 여기서 처리하지 않음
   if(window._isSignup)return;
+  resetAuthBtn(); // 로그인 성공/차단 후에도 버튼이 '처리 중...'으로 굳지 않게 복구
   // 좀비 계정 복구: users/{uid}에 데이터가 없으면
   const preSnap=await db.ref('users/'+user.uid).once('value');
   if(!preSnap.exists()){
