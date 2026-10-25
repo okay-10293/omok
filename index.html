@@ -1091,6 +1091,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
     <div class="menu-btn-group">
       <button class="menu-btn primary" onclick="openPlayModePrompt('strategic')" style="padding:18px;font-size:18px;">전략적 오목 플레이</button>
       <button class="menu-btn secondary" onclick="openPlayModePrompt('classic')" style="padding:14px;font-size:16px;">클래식 오목 플레이</button>
+      <button class="menu-btn secondary" id="resumeGameBtn" onclick="resumeOnlineGame()" style="display:none;padding:14px;font-size:15px;border-color:var(--accent);color:var(--accent2);">진행 중인 온라인 대전 이어하기</button>
     </div>
   </div>
   <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
@@ -2097,6 +2098,8 @@ function showMenuWithUser(){
   checkFriendBadge();
   listenFriendGameInvites();
   showPage('page-menu');
+  refreshResumeBtn();
+  if(!window._resumeAsked){window._resumeAsked=true;if(getResume())setTimeout(()=>{if(getResume()&&confirm('진행 중이던 온라인 대전이 있습니다. 이어서 할까요?'))resumeOnlineGame();},300);} // 페이지를 새로 열었을 때 한 번만 묻는다 (직접 나간 경우엔 메뉴 버튼으로)
   maybeOfferTutorial();
 }
 function handleTopProfileClick(){
@@ -4018,6 +4021,7 @@ function findWinCells(r,c,p,bd,size,exiledFn){
 }
 function showWin(player,reason){
   if(winnerDetermined)return;winnerDetermined=true;_onlineWinnerPlayer=player;clearInterval(timerInterval);
+  if(isOnlineGame)clearResume();
   const name=player===1?'흑 ('+gameNicknames.black+')':'백 ('+gameNicknames.white+')';
   if(isOnlineGame&&currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(player===myP);}
   if(isOnlineGame)onlineSyncAfterTurn();
@@ -4445,7 +4449,7 @@ function doomApply(dir,side){
 // ── Status / quit ─────────────────────────────────────
 function setStatus(msg){const el=document.getElementById('statusBar');if(el)el.innerHTML=msg;}
 function confirmQuit(){document.getElementById('quitModal').classList.add('show');}
-function quitToMenu(){clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
+function quitToMenu(){releaseGameLock();clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
   if(window._practiceMode){exitPracticeMode();return;}
   if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showMenuAsVisitor();}}
 function startLocalGame(){onlineRoomId=null;onlineMyRole=null;const nick=currentUserData?currentUserData.nickname:'플레이어';showPage('page-game');initGame({nicknames:{black:nick+'(흑)',white:nick+'(백)'}});}
@@ -4541,6 +4545,7 @@ function loadLobbyRooms(){
       if(Date.now()-(v.createdAt||0)>30*60*1000)return;
       // 내가 만든 방 제외
       if(c.key===_lobbyMyRoomId)return;
+      if(v.blackUid&&currentUser&&v.blackUid===currentUser.uid)return;
       rooms.push({id:c.key,...v});
     });
     if(rooms.length===0){
@@ -4629,6 +4634,7 @@ function joinLobbyRoom(code,gameType){
   db.ref('rooms/'+code).once('value').then(snap=>{
     const room=snap.val();
     if(!room||room.status!=='waiting'){alert('이미 시작됐거나 없는 방입니다.');loadLobbyRooms();return;}
+    if(isOwnRoom(room)){alert('내가 만든 방에는 입장할 수 없습니다. (같은 계정끼리는 대결할 수 없어요)');return;}
     onlineRoomId=code;onlineMyRole='white';
     db.ref('rooms/'+code).update({whiteNick:myNick,whiteUid:myUid}).then(()=>{
       stopLobbyListener();
@@ -4676,6 +4682,7 @@ function joinOnlineRoom(){
     const room=snap.val();
     if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
     if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.display='block';return;}
+    if(isOwnRoom(room)){msgEl.textContent='내가 만든 방에는 입장할 수 없습니다.';msgEl.style.display='block';return;}
     const myNick=currentUserData?currentUserData.nickname:'백';
     const myUid=currentUser?currentUser.uid:null;
     onlineRoomId=code;onlineMyRole='white';
@@ -4689,9 +4696,62 @@ function joinOnlineRoom(){
   }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.display='block';});
 }
 
-function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
+// ── 온라인 대전 이어하기 (같은 컴퓨터) ───────────────────────
+// 진행 중인 방 정보를 localStorage 에 저장해 두고, 나갔다 들어와도 같은 방에 다시 접속한다.
+// Web Locks 로 "한 번에 한 창만" 같은 방에 들어가게 막아서 같은 계정끼리 대결하는 것도 방지한다.
+const RESUME_KEY='omokResume';
+let _gameLockRelease=null;
+function saveResume(type,code,role){
+  if(!currentUser)return; // 게스트는 이어하기 미지원
+  try{localStorage.setItem(RESUME_KEY,JSON.stringify({type,code,role,uid:currentUser.uid,ts:Date.now()}));}catch(e){}
+}
+function getResume(){
+  try{
+    if(!currentUser)return null;
+    const r=JSON.parse(localStorage.getItem(RESUME_KEY)||'null');
+    if(!r||r.uid!==currentUser.uid||Date.now()-r.ts>6*3600*1000)return null;
+    return r;
+  }catch(e){return null;}
+}
+function clearResume(){try{localStorage.removeItem(RESUME_KEY);}catch(e){}releaseGameLock();refreshResumeBtn();}
+function holdGameLock(code){
+  return new Promise(res=>{
+    if(!navigator.locks){res(true);return;}
+    releaseGameLock();
+    navigator.locks.request('omok-room-'+code,{ifAvailable:true},lock=>{
+      if(!lock){res(false);return;}
+      res(true);
+      return new Promise(r=>{_gameLockRelease=r;});
+    });
+  });
+}
+function releaseGameLock(){if(_gameLockRelease){_gameLockRelease();_gameLockRelease=null;}}
+function refreshResumeBtn(){
+  const b=document.getElementById('resumeGameBtn');
+  if(b)b.style.display=getResume()?'block':'none';
+}
+function isOwnRoom(room){return !!(room&&currentUser&&room.blackUid&&room.blackUid===currentUser.uid);}
+async function resumeOnlineGame(){
+  const r=getResume();
+  if(!r||!db)return;
+  const ok=await holdGameLock(r.code);
+  if(!ok){alert('이 대전은 다른 창에서 이미 진행 중입니다.');return;}
+  let room=null;
+  try{room=(await db.ref('rooms/'+r.code).once('value')).val();}catch(e){}
+  const key=r.type==='classic'?'cState':'gameState';
+  let finished=!room||room.status!=='playing'||!!room.surrender||!!room.cSurrender;
+  if(!finished&&room[key]&&room[key].data){
+    try{const st=JSON.parse(room[key].data);finished=!!(st.winnerPlayer||st.winner||st.winnerDetermined);}catch(e){}
+  }
+  if(finished){clearResume();alert('이미 끝났거나 사라진 대전입니다.');return;}
+  if(r.type==='classic')startClassicOnlineGame(r.code,r.role,room.blackNick,room.whiteNick,room.blackUid||null,room.whiteUid||null,true);
+  else startOnlineGame(r.code,r.role,room.blackNick,room.whiteNick,room.blackUid||null,room.whiteUid||null,true);
+}
+
+function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid,resume){
   showPage('page-game');
   initGame({online:true,roomId:code,myRole:role,nicknames:{black:blackNick||'흑',white:whiteNick||'백'}});
+  saveResume('strategic',code,role);if(!resume)holdGameLock(code);
 
   // 상대 전적 조회
   const oppUid=role==='black'?whiteUid:blackUid;
@@ -4725,8 +4785,12 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
 
   // 흑은 초기 상태를 즉시 push
   if(role==='black'){
-    pushGameState();
-    setStatus('흑의 차례입니다. 카드를 사용하거나 <b>착수만 하기</b>를 누르세요.');
+    if(!resume){
+      pushGameState();
+      setStatus('흑의 차례입니다. 카드를 사용하거나 <b>착수만 하기</b>를 누르세요.');
+    }else{
+      setStatus('대전을 이어서 불러오는 중...');
+    }
   } else {
     setStatus('흑(상대)의 차례입니다. 대기 중...');
   }
@@ -4762,6 +4826,7 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
         document.getElementById('winTitle').textContent=name+' 승리!';
         document.getElementById('winDesc').textContent='5개를 연속으로 놓아 승리!';
         document.getElementById('winOverlay').classList.add('show');
+        clearResume();
         if(currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(wp===myP);}
       }
       renderAll();
@@ -4787,9 +4852,32 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
     });
   }
   if(role==='black'){
+    // 이어하기: 처음 들어오는 whiteAction 은 이미 처리된 오래된 값일 수 있어서
+    // gameState(흑이 마지막으로 올린 상태)와 시각을 비교해 더 최신인 쪽만 적용한다.
+    let _firstWA=!!resume;
+    const loadSavedState=()=>db.ref('rooms/'+code+'/gameState').once('value').then(g=>{
+      const gv=g.val();if(!gv||!gv.data)return;
+      deserializeGameState(gv.data);resizeBoard();renderAll();
+      if(winnerDetermined)return;
+      if(isMyTurn()){stopOppTimer();startTimer();setStatus('내 차례입니다. 판을 눌러 착수하거나 카드를 눌러 스킬을 사용하세요.');showPlaceBtn(true);}
+      else{clearInterval(timerInterval);setStatus('상대방의 차례입니다. 대기 중...');}
+    });
     db.ref('rooms/'+code+'/whiteAction').on('value',snap2=>{
       const act=snap2.val();
+      if(_firstWA){
+        _firstWA=false;
+        if(!act||!act.data){loadSavedState();return;}
+        db.ref('rooms/'+code+'/gameState').once('value').then(g=>{
+          const gv=g.val();
+          if(gv&&gv.data&&(gv.ts||0)>=(act.ts||0))loadSavedState();
+          else applyWhiteAction(act);
+        });
+        return;
+      }
       if(!act||!act.data)return;
+      applyWhiteAction(act);
+    });
+    function applyWhiteAction(act){
       // 백의 상태를 흑이 수신 → 흑 로컬에 반영
       deserializeGameState(act.data);
       resizeBoard();
@@ -4801,6 +4889,7 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
           document.getElementById('winTitle').textContent=name+' 승리!';
           document.getElementById('winDesc').textContent='5개를 연속으로 놓아 승리!';
           document.getElementById('winOverlay').classList.add('show');
+          clearResume();
           if(currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(wp===myP);}
         }
         renderAll();
@@ -4815,7 +4904,7 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
         // 흑이 새 상태를 re-push해서 백도 최신 상태 공유
         pushGameState();
       }
-    });
+    }
   }
 }
 
@@ -5229,6 +5318,7 @@ let cWinAnimStart=null;
 function cShowWin(player){
   if(cWinnerDetermined)return;
   cWinnerDetermined=true;
+  if(cIsOnline)clearResume();
   clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
   const name=player===1?'흑 ('+cNicknames.black+')':'백 ('+cNicknames.white+')';
   document.getElementById('cWinTitle').textContent=name+' 승리!';
@@ -5360,6 +5450,7 @@ function cDoSurrender(){
   if(cIsOnline&&currentUser){recordResult(false);}
   // 승리창 (이펙트 없이 바로)
   cWinnerDetermined=true;
+  if(cIsOnline)clearResume();
   clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
   document.getElementById('cWinTitle').textContent=oppName+' 승리!';
   document.getElementById('cWinDesc').textContent=cIsAiGame?'AI가 이겼습니다. 다시 도전해보세요!':oppName+'님이 '+surrenderName+'님의 항복으로 승리!';
@@ -5729,6 +5820,7 @@ function joinClassicLocalRoom(){
     const room=snap.val();
     if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.display='block';return;}
     if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.display='block';return;}
+    if(isOwnRoom(room)){msgEl.textContent='내가 만든 방에는 입장할 수 없습니다.';msgEl.style.display='block';return;}
     const myNick=currentUserData?currentUserData.nickname:'백';
     const myUid=currentUser?currentUser.uid:null;
     cRoomId=code;cMyRole='white';
@@ -5805,6 +5897,7 @@ function loadClassicLobbyRooms(){
       const v=c.val();
       if(Date.now()-(v.createdAt||0)>30*60*1000)return;
       if(c.key===_clLobbyRoomId)return;
+      if(v.blackUid&&currentUser&&v.blackUid===currentUser.uid)return;
       if(!v.classic)return; // 클래식 방만 표시
       if(v.local)return;    // 로컬 방 제외
       rooms.push({id:c.key,...v});
@@ -5891,6 +5984,7 @@ function joinClassicLobbyRoom(code){
   db.ref('rooms/'+code).once('value').then(snap=>{
     const room=snap.val();
     if(!room||room.status!=='waiting'){alert('이미 시작됐거나 없는 방입니다.');loadClassicLobbyRooms();return;}
+    if(isOwnRoom(room)){alert('내가 만든 방에는 입장할 수 없습니다. (같은 계정끼리는 대결할 수 없어요)');return;}
     cRoomId=code;cMyRole='white';
     db.ref('rooms/'+code).update({whiteNick:myNick,whiteUid:myUid}).then(()=>{
       stopClassicLobbyListener();
@@ -5913,6 +6007,7 @@ function joinClassicOnlineRoom(){
     const room=snap.val();
     if(!room){msgEl.textContent='존재하지 않는 방입니다.';msgEl.style.color='var(--red)';msgEl.style.display='block';return;}
     if(room.status!=='waiting'){msgEl.textContent='이미 시작된 방입니다.';msgEl.style.color='var(--red)';msgEl.style.display='block';return;}
+    if(isOwnRoom(room)){msgEl.textContent='내가 만든 방에는 입장할 수 없습니다.';msgEl.style.color='var(--red)';msgEl.style.display='block';return;}
     const myNick=currentUserData?currentUserData.nickname:'백';
     const myUid=currentUser?currentUser.uid:null;
     cRoomId=code;cMyRole='white';
@@ -5924,9 +6019,10 @@ function joinClassicOnlineRoom(){
     });
   }).catch(e=>{msgEl.textContent='오류: '+e.message;msgEl.style.color='var(--red)';msgEl.style.display='block';});
 }
-function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid){
+function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid,resume){
   showPage('page-classic-game');
   initClassicGame({online:true,roomId:code,myRole:role,nicknames:{black:blackNick||'흑',white:whiteNick||'백'}});
+  saveResume('classic',code,role);if(!resume)holdGameLock(code);
   // 상대 전적
   const oppUid=role==='black'?whiteUid:blackUid;
   const oppElId=role==='black'?'cWhiteRecord':'cBlackRecord';
@@ -5948,7 +6044,7 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
     const myName=role==='black'?cNicknames.black:cNicknames.white;
     const oppName=role==='black'?cNicknames.white:cNicknames.black;
     if(currentUser)recordResult(true);
-    cWinnerDetermined=true;
+    cWinnerDetermined=true;clearResume();
     clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
     document.getElementById('cWinTitle').textContent=myName+' 승리!';
     document.getElementById('cWinDesc').textContent=myName+'님이 '+oppName+'님의 항복으로 승리!';
@@ -5960,7 +6056,18 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
     if(d.by===role){cStopOppTimer();return;}
     cStartOppTimer(d.startedAt,d.max||C_TIMER_MAX);
   });
-  if(role==='black'){
+  if(resume){
+    // 이어하기: 새 판을 올리지 않고 방에 저장된 마지막 상태를 불러온다
+    clearInterval(cTimerInterval);
+    cSetStatus('대전을 이어서 불러오는 중...');
+    db.ref('rooms/'+code+'/cState').once('value').then(g=>{
+      const gv=g.val();if(!gv||!gv.data)return;
+      cDeserialize(gv.data);cResizeBoard();cDrawBoard();cUpdateTurnUI();cUpdateSurrenderBtn();
+      if(cWinnerDetermined)return;
+      if(cIsMyClassicTurn()){cStartTimer();cSetStatus('내 차례입니다. 보드를 클릭해 착수하세요.');}
+      else cSetStatus('상대방의 차례입니다. 대기 중...');
+    });
+  }else if(role==='black'){
     cPushState();
     cSetStatus('흑의 차례입니다. 보드를 클릭해 착수하세요.');
   }else{
@@ -5982,6 +6089,7 @@ function startClassicOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid)
         document.getElementById('cWinTitle').textContent=name+' 승리!';
         document.getElementById('cWinDesc').textContent='5개를 연속으로 놓아 승리!';
         document.getElementById('cWinOverlay').classList.add('show');
+        clearResume();
         if(currentUser){const myP=cMyRole==='black'?1:2;recordResult(wp===myP);}
       }
       return;
@@ -6040,6 +6148,7 @@ function sendClassicChat(){
   input.value='';
 }
 function cCleanupOnline(){
+  releaseGameLock();
   if(cGlowAnim){cancelAnimationFrame(cGlowAnim);cGlowAnim=null;}
   if(cWinAnimFrame){cancelAnimationFrame(cWinAnimFrame);cWinAnimFrame=null;}
   clearInterval(cTimerInterval);clearInterval(cOppTimerInterval);
