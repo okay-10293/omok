@@ -83,6 +83,9 @@ button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 @keyframes doomShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,-2px);}60%{transform:translate(4px,2px);}75%{transform:translate(-2px,1px);}}
 @keyframes doomTitle{0%{transform:translate(-50%,-50%) scale(2.4);letter-spacing:.9em;opacity:0;filter:blur(8px);}22%{transform:translate(-50%,-50%) scale(1);letter-spacing:.18em;opacity:1;filter:blur(0);}78%{transform:translate(-50%,-50%) scale(1.06);letter-spacing:.2em;opacity:1;}100%{transform:translate(-50%,-50%) scale(1.25);letter-spacing:.3em;opacity:0;}}
 @keyframes doomSpark{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0;}}
+@keyframes chainArc{0%{opacity:1;}25%{opacity:.35;}40%{opacity:1;}60%{opacity:.5;}80%{opacity:.9;}100%{opacity:0;}}
+@keyframes chainFlash{0%{transform:scale(.3);opacity:1;}100%{transform:scale(1.5);opacity:0;}}
+@keyframes chainShock{0%{filter:brightness(1);transform:translate(0,0);}20%{filter:brightness(4) hue-rotate(160deg);transform:translate(-2px,1px);}45%{filter:brightness(1.5);transform:translate(2px,-1px);}70%{filter:brightness(4) hue-rotate(160deg);transform:translate(-1px,-1px);}100%{filter:brightness(2);transform:translate(0,0);}}
 @keyframes ripple{0%{transform:scale(0.3);opacity:0.8;}100%{transform:scale(2.2);opacity:0;}}
 /* ── 승리 이펙트 ── */
 @keyframes winStoneGlow{0%{transform:translate(-50%,-50%) scale(0.8);opacity:0;}35%{transform:translate(-50%,-50%) scale(1.7);opacity:1;}70%{transform:translate(-50%,-50%) scale(1.35);opacity:0.9;}100%{transform:translate(-50%,-50%) scale(1.2);opacity:0;}}
@@ -3067,6 +3070,63 @@ function showTrapEffect(r,c){
   setTimeout(()=>ring.remove(),550);
 }
 
+// 연쇄 체인 연출: 시작 돌에서 전기가 튀며 인접한 돌로 이어지고, 닿는 돌마다 감전되어 사라진다
+function playChainEffect(nodes){
+  const key=n=>n.r+','+n.c;
+  const map={};nodes.forEach(n=>{map[key(n)]=n;});
+  const STEP=150; // 한 칸 전파되는 간격(ms)
+  const made=[];
+  const add=(css)=>{const e=document.createElement('div');e.style.cssText='position:fixed;pointer-events:none;'+css;document.body.appendChild(e);made.push(e);return e;};
+  const svgNS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('style','position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:799;overflow:visible;');
+  document.body.appendChild(svg);made.push(svg);
+  const pos={};nodes.forEach(n=>{pos[key(n)]=getBoardCellScreenPos(n.r,n.c);});
+  const R=Math.max(6,CELL_SIZE/2-2);
+  // 제거될 돌을 같은 모양으로 덮어 두고, 전기가 닿는 순간까지 그대로 보이게 한다
+  const clones={};
+  nodes.forEach(n=>{
+    const {x,y}=pos[key(n)];
+    clones[key(n)]=add(`left:${x-R}px;top:${y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;z-index:798;background:${n.p===1?'radial-gradient(circle at 35% 30%,#555,#111)':'radial-gradient(circle at 35% 30%,#fff,#bbb)'};${n.p===1?'':'border:1px solid #ccc;'}`);
+  });
+  const arc=(a,b,delay)=>{
+    // 지그재그 번개 경로 (양 끝은 돌 가장자리에서 시작/끝)
+    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+    const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
+    const sx=a.x+ux*R*0.4,sy=a.y+uy*R*0.4,ex=b.x-ux*R*0.4,ey=b.y-uy*R*0.4;
+    const segs=6,pts=[];
+    for(let i=0;i<=segs;i++){
+      const t=i/segs,off=(i===0||i===segs)?0:(Math.random()-.5)*CELL_SIZE*0.45;
+      pts.push((sx+(ex-sx)*t+nx*off).toFixed(1)+','+(sy+(ey-sy)*t+ny*off).toFixed(1));
+    }
+    [['rgba(90,170,255,.55)',7,'blur'],['#bfe6ff',3.2,''],['#ffffff',1.4,'']].forEach(([col,w,k])=>{
+      const pl=document.createElementNS(svgNS,'polyline');
+      pl.setAttribute('points',pts.join(' '));pl.setAttribute('fill','none');pl.setAttribute('stroke',col);
+      pl.setAttribute('stroke-width',w);pl.setAttribute('stroke-linecap','round');pl.setAttribute('stroke-linejoin','round');
+      pl.style.cssText=`opacity:0;${k?'filter:blur(2.5px);':'filter:drop-shadow(0 0 4px #5ab4ff);'}animation:chainArc .5s ${delay}ms steps(1,end) both;`;
+      svg.appendChild(pl);
+    });
+  };
+  const dirs=[[0,1],[1,0]]; // 인접한 쌍을 한 번씩만
+  nodes.forEach(n=>{
+    const d=n.d,t=d*STEP;
+    // 이 돌이 감전되는 순간: 푸른 섬광 + 링, 그다음 제거
+    setTimeout(()=>{
+      const c=clones[key(n)];if(c)c.style.animation='chainShock .26s linear both';
+      const {x,y}=pos[key(n)];
+      add(`left:${x-R*1.6}px;top:${y-R*1.6}px;width:${R*3.2}px;height:${R*3.2}px;border-radius:50%;z-index:800;background:radial-gradient(circle,rgba(220,240,255,.95) 0%,rgba(90,170,255,.55) 45%,rgba(90,170,255,0) 70%);animation:chainFlash .45s ease-out forwards;`);
+    },t+90);
+    setTimeout(()=>{const c=clones[key(n)];if(c)c.remove();showStoneRemoveEffect(n.r,n.c,n.p);},t+300);
+    // 이미 전기가 도착한 이웃(깊이가 같거나 작은 돌)과 번개로 연결
+    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
+      const m=map[(n.r+dr)+','+(n.c+dc)];
+      if(m&&m.d<=n.d&&!(m.d===n.d&&key(m)>key(n)))arc(pos[key(m)],pos[key(n)],t);
+    });
+  });
+  const maxD=Math.max(...nodes.map(n=>n.d));
+  setTimeout(()=>made.forEach(e=>e.remove()),maxD*STEP+1100);
+}
+
 // ── 돌 제거 이펙트 ────────────────────────────────────────────
 // remove, chain, bomb, self_destruct 등 돌이 보드에서 제거될 때 호출
 // player: 1=흑, 2=백 (색상 결정용)
@@ -3884,19 +3944,19 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
     chain:['stone',1,(cs)=>{
       const[r,c]=cs[0];
       const q=[[r,c]],vis=new Set([r+','+c]),rem=[[r,c]];
+      const depth={};depth[r+','+c]=0;
       while(q.length){
         const[cr,cc]=q.shift();
         [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
           const nr=cr+dr,nc=cc+dc,k=nr+','+nc;
           if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&!vis.has(k)&&board[nr][nc]!==0&&!isFort(nr,nc)){
-            vis.add(k);rem.push([nr,nc]);q.push([nr,nc]);
+            vis.add(k);rem.push([nr,nc]);q.push([nr,nc]);depth[k]=depth[cr+','+cc]+1;
           }
         });
       }
-      // 거리에 따라 딜레이를 줘서 연쇄 전파 느낌
+      // 전기가 이어지며 전파되는 연출 (깊이 순서대로)
+      playChainEffect(rem.map(([rr,rc])=>({r:rr,c:rc,p:board[rr][rc],d:depth[rr+','+rc]})));
       rem.forEach(([rr,rc],i)=>{
-        const victim=board[rr][rc];
-        setTimeout(()=>showStoneRemoveEffect(rr,rc,victim),i*55);
         board[rr][rc]=0;delete fortified[rr+','+rc];
         // [버그수정] 제거된 칸에 걸린 exile/prophet 효과도 정리
         delete exiledCells[rr+','+rc];delete prophetCells[rr+','+rc];
