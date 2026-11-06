@@ -449,6 +449,7 @@ canvas#boardCanvas{display:block;touch-action:none;}
 /* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.42);z-index:600;display:none;align-items:center;justify-content:center;}
 .modal-overlay.show{display:flex;}
+.practice-mode .merge-section .panel-section-label,.practice-mode .merge-slots,.practice-mode .merge-btn,.practice-mode .merge-hint{display:none !important;}
 .modal-box{background:var(--ui-bg);border-radius:13px;padding:22px 18px;max-width:330px;width:90%;}
 .modal-box h3{font-family:'Do Hyeon',sans-serif;font-size:19px;color:var(--accent);margin-bottom:7px;}
 .modal-box p{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px;}
@@ -2637,6 +2638,7 @@ function startCardTrial(cardId){
   const card=CARDS_DEF.find(c=>c.id===cardId);
   if(!card)return;
   window._practiceMode=true;
+  document.body.classList.add('practice-mode'); // 체험 모드에서는 카드 합성 UI 숨김
   showPage('page-game');
   initGame({nicknames:{black:'체험 모드',white:'상대(연습용)'}});
   // 카드 효과를 곧바로 시험해볼 수 있도록 패를 채우고, 보드에 연습용 돌을 몇 개 미리 깔아준다.
@@ -2661,6 +2663,7 @@ function showPracticeBanner(cardName){
 }
 function exitPracticeMode(){
   window._practiceMode=false;
+  document.body.classList.remove('practice-mode');
   const el=document.getElementById('practiceBanner');
   if(el)el.style.display='none';
   showPage('page-book');
@@ -3613,6 +3616,7 @@ function updateMerge(player){
 
 // ── Merge ─────────────────────────────────────────────
 function clickMergeSlot(player,idx){
+  if(window._practiceMode)return;
   const isActive=(player==='black'&&currentPlayer===1)||(player==='white'&&currentPlayer===2);
   const canAct=isOnlineGame?(onlineMyRole===player&&isMyTurn()):isActive;
   if(!canAct||!(phase==='card'||phase==='place'))return;
@@ -3624,6 +3628,7 @@ function clickMergeSlot(player,idx){
   ms[idx]=card;hands[player].splice(selectedCardIdx,1);selectedCardIdx=null;renderHand(player);
 }
 function doMerge(player){
+  if(window._practiceMode)return;
   const ms=mergeSlots[player];if(!ms[0]||!ms[1]||ms[0].star!==ms[1].star||ms[0].star>=5)return;
   if(hands[player].length>=8){
     // 패가 가득 찼으면 슬롯 카드를 손패로 돌려줌 (소실 방지)
