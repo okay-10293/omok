@@ -1645,12 +1645,15 @@ function drawBombIcon(ctx,cx,cy,size){
 // ── 사파리 더블탭/핀치 확대 방지 ───────────────────────────
 // viewport 설정과 touch-action 만으로 안 막히는 경우가 있어 JS 로도 막는다.
 ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
-let _lastTouchEndAt=0;
+let _lastTouchEndAt=0,_lastTouchX=-999,_lastTouchY=-999;
 document.addEventListener('touchend',e=>{
   const now=Date.now();
-  const t=e.target&&e.target.closest?e.target.closest('input,textarea,select'):null;
-  if(!t&&now-_lastTouchEndAt<=500)e.preventDefault();
-  _lastTouchEndAt=now;
+  const t=e.changedTouches&&e.changedTouches[0];
+  const x=t?t.clientX:0,y=t?t.clientY:0;
+  const tag=e.target&&e.target.closest?e.target.closest('input,textarea,select,canvas'):null;
+  // 같은 자리를 빠르게 두 번 탭한 경우(더블탭 확대)만 막는다. 다른 버튼을 연달아 누르는 건 막지 않는다.
+  if(!tag&&now-_lastTouchEndAt<=400&&Math.hypot(x-_lastTouchX,y-_lastTouchY)<=24)e.preventDefault();
+  _lastTouchEndAt=now;_lastTouchX=x;_lastTouchY=y;
 },{passive:false});
 function initFirebase(){
   if(db)return true;
