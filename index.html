@@ -73,6 +73,16 @@ button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 @keyframes shard{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
 /* 돌 제거 이펙트 (흑돌/백돌이 터지며 사라지는 느낌) */
 @keyframes stoneRemove{0%{transform:scale(1);opacity:1;}30%{transform:scale(1.35);opacity:0.9;}100%{transform:scale(0);opacity:0;}}
+/* ── 종말의 심판 연출 ── */
+@keyframes doomDim{0%{opacity:0;}15%{opacity:1;}78%{opacity:1;}100%{opacity:0;}}
+@keyframes doomFlash{0%{opacity:0;}12%{opacity:.85;}100%{opacity:0;}}
+@keyframes doomBeam{0%{transform:scaleX(0);opacity:0;}20%{opacity:1;}100%{transform:scaleX(1);opacity:1;}}
+@keyframes doomBeamFade{0%{opacity:1;}100%{opacity:0;}}
+@keyframes doomWaveY{0%{transform:scaleY(0);opacity:.95;}80%{opacity:.85;}100%{transform:scaleY(1);opacity:0;}}
+@keyframes doomWaveX{0%{transform:scaleX(0);opacity:.95;}80%{opacity:.85;}100%{transform:scaleX(1);opacity:0;}}
+@keyframes doomShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,-2px);}60%{transform:translate(4px,2px);}75%{transform:translate(-2px,1px);}}
+@keyframes doomTitle{0%{transform:translate(-50%,-50%) scale(2.4);letter-spacing:.9em;opacity:0;filter:blur(8px);}22%{transform:translate(-50%,-50%) scale(1);letter-spacing:.18em;opacity:1;filter:blur(0);}78%{transform:translate(-50%,-50%) scale(1.06);letter-spacing:.2em;opacity:1;}100%{transform:translate(-50%,-50%) scale(1.25);letter-spacing:.3em;opacity:0;}}
+@keyframes doomSpark{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0;}}
 @keyframes ripple{0%{transform:scale(0.3);opacity:0.8;}100%{transform:scale(2.2);opacity:0;}}
 /* ── 승리 이펙트 ── */
 @keyframes winStoneGlow{0%{transform:translate(-50%,-50%) scale(0.8);opacity:0;}35%{transform:translate(-50%,-50%) scale(1.7);opacity:1;}70%{transform:translate(-50%,-50%) scale(1.35);opacity:0.9;}100%{transform:translate(-50%,-50%) scale(1.2);opacity:0;}}
@@ -4456,7 +4466,7 @@ function doomCancel(){
 function doomApply(dir,side){
   const ov=document.getElementById('doomsdayOv');if(ov)ov.remove();
   const half=Math.floor(BS/2);
-  let delay=0;
+  const victims=[];
   for(let r=0;r<BS;r++)for(let c=0;c<BS;c++){
     let rm=false;
     if(dir==='h'&&side==='top'&&r<=half)rm=true;
@@ -4465,15 +4475,71 @@ function doomApply(dir,side){
     if(dir==='v'&&side==='right'&&c>=half)rm=true;
     if(rm&&!isFort(r,c)){
       if(board[r][c]!==0){
-        const victim=board[r][c];
-        // 거리 기반 딜레이로 쓸려나가는 느낌
-        const d=dir==='h'?(side==='top'?r:(BS-1-r)):(side==='left'?c:(BS-1-c));
-        setTimeout(()=>showStoneRemoveEffect(r,c,victim),d*30);
+        // 경계선에서 멀수록 늦게 사라짐 (파도가 쓸고 지나가는 순서)
+        const d=dir==='h'?(side==='top'?half-r:r-half):(side==='left'?half-c:c-half);
+        victims.push({r,c,p:board[r][c],d});
       }
       board[r][c]=0;
     }
   }
+  playDoomsdayEffect(dir,side,victims);
   setStatus('종말의 심판!');endGoPlace();
+}
+// 종말의 심판 연출: 암전 → 경계선 번쩍임 → 불길 파도가 선택한 영역을 쓸며 돌이 차례로 소멸 → 타이틀
+function playDoomsdayEffect(dir,side,victims){
+  const cv=document.getElementById('boardCanvas');if(!cv)return;
+  const rect=cv.getBoundingClientRect();
+  const half=Math.floor(BS/2);
+  const p0=getBoardCellScreenPos(0,0),p1=getBoardCellScreenPos(1,1);
+  const csx=p1.x-p0.x,csy=p1.y-p0.y;
+  const mid=getBoardCellScreenPos(half,half);
+  const horiz=dir==='h';
+  // 경계선 위치 (중앙 줄의 먼 쪽 가장자리)와 영역 사각형
+  let bx=0,by=0,rx=rect.left,ry=rect.top,rw=rect.width,rh=rect.height,origin='';
+  if(horiz){
+    if(side==='top'){by=mid.y+csy/2;ry=rect.top;rh=by-rect.top;origin='bottom';}
+    else{by=mid.y-csy/2;ry=by;rh=rect.bottom-by;origin='top';}
+  }else{
+    if(side==='left'){bx=mid.x+csx/2;rx=rect.left;rw=bx-rect.left;origin='right';}
+    else{bx=mid.x-csx/2;rx=bx;rw=rect.right-bx;origin='left';}
+  }
+  const made=[];
+  const add=(css,html)=>{const e=document.createElement('div');e.style.cssText='position:fixed;pointer-events:none;'+css;if(html)e.innerHTML=html;document.body.appendChild(e);made.push(e);return e;};
+  // 1) 암전 + 붉은 비네트, 번쩍임
+  add('inset:0;z-index:790;background:radial-gradient(ellipse at center,rgba(60,0,0,0.25) 0%,rgba(10,0,0,0.78) 100%);animation:doomDim 2.3s ease-out forwards;');
+  add('inset:0;z-index:795;background:#fff;animation:doomFlash .5s ease-out forwards;');
+  cv.style.animation='doomShake .55s .15s 2';
+  setTimeout(()=>{cv.style.animation='';},1300);
+  // 2) 경계선 빔
+  const beamCss=horiz
+    ?`left:${rect.left-10}px;width:${rect.width+20}px;top:${by-3}px;height:6px;transform-origin:${side==='top'?'left':'right'} center;`
+    :`top:${rect.top-10}px;height:${rect.height+20}px;left:${bx-3}px;width:6px;transform-origin:center ${side==='left'?'top':'bottom'};`;
+  add(beamCss+'z-index:797;border-radius:6px;background:linear-gradient(90deg,#fff,#ffe7a0,#fff);box-shadow:0 0 14px 6px rgba(255,210,100,.95),0 0 40px 16px rgba(255,90,30,.7);animation:'+(horiz?'doomBeam':'doomBeam')+' .28s ease-out forwards,doomBeamFade .5s 1.2s forwards;');
+  // 3) 불길 파도 (경계에서 바깥쪽 가장자리로 확산)
+  const grad=horiz
+    ?`linear-gradient(${side==='top'?'to top':'to bottom'},rgba(255,255,230,.95) 0%,rgba(255,190,70,.8) 8%,rgba(255,80,20,.55) 40%,rgba(120,0,0,.35) 100%)`
+    :`linear-gradient(${side==='left'?'to left':'to right'},rgba(255,255,230,.95) 0%,rgba(255,190,70,.8) 8%,rgba(255,80,20,.55) 40%,rgba(120,0,0,.35) 100%)`;
+  add(`left:${rx}px;top:${ry}px;width:${rw}px;height:${rh}px;z-index:796;background:${grad};mix-blend-mode:screen;transform-origin:${origin};animation:${horiz?'doomWaveY':'doomWaveX'} .9s .28s cubic-bezier(.3,.1,.5,1) forwards;transform:${horiz?'scaleY(0)':'scaleX(0)'};`);
+  // 4) 돌: 파도가 닿는 순간 터지며 소멸
+  const R=Math.max(6,Math.abs(csx)/2-2);
+  victims.forEach(v=>{
+    const {x,y}=getBoardCellScreenPos(v.r,v.c);
+    const st=add(`left:${x-R}px;top:${y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;z-index:798;background:${v.p===1?'radial-gradient(circle at 35% 30%,#555,#111)':'radial-gradient(circle at 35% 30%,#fff,#bbb)'};${v.p===1?'':'border:1px solid #ccc;'}`);
+    setTimeout(()=>{st.remove();showStoneRemoveEffect(v.r,v.c,v.p);},280+v.d*100);
+  });
+  // 5) 경계선에서 튀는 불똥
+  for(let i=0;i<26;i++){
+    const t=Math.random();
+    const sx=horiz?rect.left+rect.width*t:bx, sy=horiz?by:rect.top+rect.height*t;
+    const dirSign=horiz?(side==='top'?-1:1):(side==='left'?-1:1);
+    const dx=horiz?(Math.random()-.5)*80:dirSign*(40+Math.random()*120);
+    const dy=horiz?dirSign*(40+Math.random()*120):(Math.random()-.5)*80;
+    const sz=3+Math.random()*4;
+    add(`left:${sx}px;top:${sy}px;width:${sz}px;height:${sz}px;border-radius:50%;z-index:799;background:${Math.random()<.5?'#ffd66b':'#ff7a2a'};box-shadow:0 0 8px 2px rgba(255,140,40,.9);--sx:${dx}px;--sy:${dy}px;animation:doomSpark ${.7+Math.random()*.6}s ${.28+Math.random()*.6}s ease-out both;`);
+  }
+  // 6) 타이틀
+  add(`left:50%;top:42%;z-index:800;white-space:nowrap;font-family:'Do Hyeon',sans-serif;font-size:clamp(30px,9vw,64px);color:#fff4d0;text-shadow:0 0 12px #ff9a2a,0 0 28px #ff3b1a,0 3px 0 #7a0a0a;animation:doomTitle 1.9s .35s cubic-bezier(.2,.8,.3,1) both;`,'종말의 심판');
+  setTimeout(()=>made.forEach(e=>e.remove()),2700);
 }
 
 // ── Status / quit ─────────────────────────────────────
