@@ -769,15 +769,15 @@ canvas#boardCanvas{display:block;touch-action:none;}
 
 <!-- 로그인 필요 안내 모달 (비로그인 방문자가 플레이 버튼을 눌렀을 때) -->
 <div class="modal-overlay" id="loginRequiredModal">
-  <div class="modal-box" style="max-width:340px;text-align:center;">
+  <div class="modal-box" style="max-width:420px;padding:26px 26px 28px;text-align:center;">
     <div style="display:flex;justify-content:flex-end;">
       <button onclick="closeLoginRequiredModal()" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
     </div>
-    <div style="font-size:34px;margin-bottom:10px;"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-8px;"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-    <h3 style="margin-bottom:8px;">로그인 후 이용해주세요</h3>
-    <p style="font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:18px;">대전을 시작하려면 로그인하거나<br>게스트로 바로 시작할 수 있어요.</p>
-    <button class="auth-submit-btn" onclick="goToLoginFromPrompt()">로그인 / 회원가입</button>
-    <button class="auth-guest-btn" style="margin-top:8px;" onclick="closeLoginRequiredModal();loginAsGuest();">게스트로 바로 시작</button>
+    <div style="font-size:44px;margin-bottom:12px;"><svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-8px;"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h3 style="margin-bottom:10px;font-size:22px;">로그인 후 이용해주세요</h3>
+    <p style="font-size:16px;color:var(--text3);line-height:1.65;margin-bottom:24px;">대전을 시작하려면 로그인하거나<br>게스트로 바로 시작할 수 있어요.</p>
+    <button class="auth-submit-btn" style="padding:16px;font-size:17px;" onclick="goToLoginFromPrompt()">로그인 / 회원가입</button>
+    <button class="auth-guest-btn" style="margin-top:10px;padding:14px;font-size:15px;" onclick="closeLoginRequiredModal();loginAsGuest();">게스트로 바로 시작</button>
   </div>
 </div>
 
