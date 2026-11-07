@@ -83,13 +83,7 @@ button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 @keyframes doomShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,-2px);}60%{transform:translate(4px,2px);}75%{transform:translate(-2px,1px);}}
 @keyframes doomTitle{0%{transform:translate(-50%,-50%) scale(2.4);letter-spacing:.9em;opacity:0;filter:blur(8px);}22%{transform:translate(-50%,-50%) scale(1);letter-spacing:.18em;opacity:1;filter:blur(0);}78%{transform:translate(-50%,-50%) scale(1.06);letter-spacing:.2em;opacity:1;}100%{transform:translate(-50%,-50%) scale(1.25);letter-spacing:.3em;opacity:0;}}
 @keyframes doomSpark{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0;}}
-@keyframes chainFlick{0%{opacity:0;}6%{opacity:1;}30%{opacity:1;}34%{opacity:0;}100%{opacity:0;}}
-@keyframes chainResidual{0%{opacity:.8;}100%{opacity:0;}}
-@keyframes chainFlash{0%{transform:scale(.3);opacity:1;}100%{transform:scale(1.9);opacity:0;}}
-@keyframes chainShock{0%{filter:brightness(1);transform:translate(0,0);}15%{filter:brightness(5) hue-rotate(160deg);transform:translate(-3px,2px);}30%{filter:brightness(1.5);transform:translate(3px,-2px);}45%{filter:brightness(5) hue-rotate(160deg);transform:translate(-2px,-2px);}60%{filter:brightness(1.5);transform:translate(2px,2px);}80%{filter:brightness(5) hue-rotate(160deg);transform:translate(-1px,1px);}100%{filter:brightness(3);transform:translate(0,0);}}
-@keyframes chainFlash2{0%{opacity:.7;}100%{opacity:0;}}
-@keyframes chainDim{0%{opacity:0;}12%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}
-@keyframes chainSpark{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0;}}
+@keyframes chainLine{from{stroke-dashoffset:1;}to{stroke-dashoffset:0;}}
 @keyframes ripple{0%{transform:scale(0.3);opacity:0.8;}100%{transform:scale(2.2);opacity:0;}}
 /* ── 승리 이펙트 ── */
 @keyframes winStoneGlow{0%{transform:translate(-50%,-50%) scale(0.8);opacity:0;}35%{transform:translate(-50%,-50%) scale(1.7);opacity:1;}70%{transform:translate(-50%,-50%) scale(1.35);opacity:0.9;}100%{transform:translate(-50%,-50%) scale(1.2);opacity:0;}}
@@ -3043,7 +3037,49 @@ function getBoardCellScreenPos(r,c){
 // → 구현상 돌이 board에 저장되기 전에 함정 체크가 일어나서
 //   실제로는 돌이 놓이지 않고 턴만 넘어감.
 //   시각적으로는 이 이펙트로 "놓였다가 터졌다"는 느낌을 줌.
+// ── 온라인: 카드 이펙트를 상대 화면에도 똑같이 재생 ─────────────────
+// 이펙트 함수가 불리는 순간 rooms/<id>/fx 에 (함수 종류+칸 좌표)를 올리고, 상대는 같은 함수를 실행한다.
+// 좌표는 보드 칸 기준이라 화면 크기가 달라도 맞는다. 상대가 재생하는 중에는 다시 올리지 않는다(_fxRemote).
+let _fxQueue=[],_fxTimer=null,_fxSeq=0,_fxLastSeen=null;
+function fxBroadcast(t,a){
+  if(!isOnlineGame||!onlineRoomId||!db||window._fxRemote)return;
+  _fxQueue.push({t,a});
+  if(_fxTimer)return;
+  _fxTimer=setTimeout(()=>{ // 같은 순간의 이펙트(폭탄 여러 칸 등)는 한 번에 묶어서 전송
+    _fxTimer=null;const list=_fxQueue;_fxQueue=[];
+    try{db.ref('rooms/'+onlineRoomId+'/fx').set({by:onlineMyRole,seq:Date.now()+':'+(++_fxSeq),list}).catch(()=>{});}catch(e){}
+  },40);
+}
+function _fxNorm(v){
+  if(v&&typeof v==='object'){
+    const ks=Object.keys(v);
+    if(ks.length&&ks.every((k,i)=>String(i)===k))return ks.map(k=>_fxNorm(v[k]));
+    const o={};ks.forEach(k=>{o[k]=_fxNorm(v[k]);});return o;
+  }
+  return v;
+}
+function listenFx(code){
+  if(!db)return;
+  let first=true;_fxLastSeen=null;
+  db.ref('rooms/'+code+'/fx').off();
+  db.ref('rooms/'+code+'/fx').on('value',snap=>{
+    const v=snap.val();
+    if(first){first=false;_fxLastSeen=v?v.seq:null;return;} // 입장 시점의 오래된 값은 무시
+    if(!v||v.by===onlineMyRole||v.seq===_fxLastSeen)return;
+    _fxLastSeen=v.seq;
+    const fns={rm:showStoneRemoveEffect,trap:showTrapEffect,chain:playChainEffect,doom:playDoomsdayEffect};
+    window._fxRemote=true;
+    try{
+      _fxNorm(v.list||[]).forEach(it=>{
+        const f=fns[it.t];if(!f)return;
+        const args=Array.isArray(it.a)?it.a:Object.values(it.a||{});
+        try{f(...args);}catch(e){}
+      });
+    }finally{window._fxRemote=false;}
+  });
+}
 function showTrapEffect(r,c){
+  fxBroadcast('trap',[r,c]);
   const{x,y}=getBoardCellScreenPos(r,c);
 
   // 중심 폭발 원
@@ -3074,19 +3110,17 @@ function showTrapEffect(r,c){
   setTimeout(()=>ring.remove(),550);
 }
 
-// 연쇄 체인 연출: 화면이 푸르게 어두워지고, 시작 돌에서 굵은 번개가 갈라지며 인접한 돌로 이어진다.
-// 닿는 돌은 감전되어 떨리고 불꽃을 튀기며 터진다. 번개는 지지직거리며(프레임마다 모양이 바뀜) 잠시 남는다.
+// 연쇄 체인 연출 (심플): 시작 돌에 파란 테두리가 켜지고, 파란 직선이 인접한 돌로 이어지며
+// 연결된 돌마다 파란 테두리가 켜진다. 잠시 뒤 돌이 차례로 사라진다.
 function playChainEffect(nodes){
+  nodes=nodes||[];if(!nodes.length)return;
+  fxBroadcast('chain',[nodes]);
   const key=n=>n.r+','+n.c;
   const map={};nodes.forEach(n=>{map[key(n)]=n;});
-  const STEP=210; // 한 칸 전파되는 간격(ms)
+  const STEP=240;      // 한 칸 전파되는 간격(ms)
+  const LINE=170;      // 선이 이어지는 시간(ms)
   const made=[];
   const add=(css)=>{const e=document.createElement('div');e.style.cssText='position:fixed;pointer-events:none;'+css;document.body.appendChild(e);made.push(e);return e;};
-  const maxD=Math.max(...nodes.map(n=>n.d));
-  const total=maxD*STEP+1300;
-  // 푸른 암전 + 시작 순간 번쩍임
-  add(`inset:0;z-index:790;background:radial-gradient(ellipse at center,rgba(10,30,70,.25) 0%,rgba(0,8,30,.62) 100%);animation:chainDim ${total}ms ease-out forwards;`);
-  add('inset:0;z-index:795;background:#cfe9ff;animation:chainFlash2 .35s ease-out forwards;');
   const svgNS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(svgNS,'svg');
   svg.setAttribute('style','position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:799;overflow:visible;');
@@ -3096,76 +3130,36 @@ function playChainEffect(nodes){
   const clones={};
   nodes.forEach(n=>{
     const {x,y}=pos[key(n)];
-    clones[key(n)]=add(`left:${x-R}px;top:${y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;z-index:798;background:${n.p===1?'radial-gradient(circle at 35% 30%,#555,#111)':'radial-gradient(circle at 35% 30%,#fff,#bbb)'};${n.p===1?'':'border:1px solid #ccc;'}`);
+    clones[key(n)]=add(`left:${x-R}px;top:${y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;z-index:798;transition:box-shadow .15s ease-out;background:${n.p===1?'radial-gradient(circle at 35% 30%,#555,#111)':'radial-gradient(circle at 35% 30%,#fff,#bbb)'};${n.p===1?'':'border:1px solid #ccc;'}`);
   });
-  // 지그재그 경로 + 곁가지
-  const bolt=(a,b,jit)=>{
-    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-    const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
-    const segs=9,pts=[];
-    for(let i=0;i<=segs;i++){
-      const t=i/segs,off=(i===0||i===segs)?0:(Math.random()-.5)*CELL_SIZE*jit;
-      pts.push([a.x+dx*t+nx*off,a.y+dy*t+ny*off]);
-    }
-    return pts;
-  };
-  const poly=(pts,col,w,glow,delay,dur,flick)=>{
-    const pl=document.createElementNS(svgNS,'polyline');
-    pl.setAttribute('points',pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '));
-    pl.setAttribute('fill','none');pl.setAttribute('stroke',col);pl.setAttribute('stroke-width',w);
-    pl.setAttribute('stroke-linecap','round');pl.setAttribute('stroke-linejoin','round');
-    pl.style.cssText=`opacity:0;filter:${glow};animation:${flick} ${dur}ms ${delay}ms steps(1,end) both;`;
-    svg.appendChild(pl);
-  };
-  const arc=(a,b,delay)=>{
-    // 3가지 모양을 번갈아 보여줘서 지지직거리는 느낌 (각 90ms), 이후 잔광
-    for(let v=0;v<3;v++){
-      const main=bolt(a,b,.8);
-      const forks=[];
-      for(let k=0;k<2;k++){
-        const idx=2+Math.floor(Math.random()*5),p0=main[idx];
-        const ang=Math.atan2(b.y-a.y,b.x-a.x)+(Math.random()<.5?-1:1)*(.7+Math.random()*.6);
-        const L=CELL_SIZE*(.45+Math.random()*.5);
-        forks.push([p0,[p0[0]+Math.cos(ang)*L*.5+(Math.random()-.5)*6,p0[1]+Math.sin(ang)*L*.5+(Math.random()-.5)*6],[p0[0]+Math.cos(ang)*L,p0[1]+Math.sin(ang)*L]]);
-      }
-      const d=delay+v*90;
-      const run=(pts,wMul)=>{
-        poly(pts,'rgba(70,150,255,.7)',11*wMul,'blur(5px)',d,270,'chainFlick');
-        poly(pts,'#9fd8ff',4.5*wMul,'drop-shadow(0 0 6px #4aa8ff)',d,270,'chainFlick');
-        poly(pts,'#ffffff',2*wMul,'none',d,270,'chainFlick');
-      };
-      run(main,1);forks.forEach(f=>run(f,.55));
-    }
-    // 잔광: 가늘게 남는 빛줄기
-    const rest=bolt(a,b,.5);
-    poly(rest,'#8fd0ff',2,'drop-shadow(0 0 5px #4aa8ff)',delay+270,700,'chainResidual');
-  };
+  const lit=n=>{const c=clones[key(n)];if(c)c.style.boxShadow='0 0 0 3px #4aa8ff,0 0 12px 3px rgba(74,168,255,.75)';};
   nodes.forEach(n=>{
-    const d=n.d,t=d*STEP;
-    // 감전: 돌이 떨리며 푸른 섬광 + 링 + 불꽃, 이어서 제거
-    setTimeout(()=>{
-      const c=clones[key(n)];if(c){c.style.animation='chainShock .4s linear both';c.style.boxShadow='0 0 16px 6px rgba(120,200,255,.95)';}
-      const {x,y}=pos[key(n)];
-      add(`left:${x-R*2}px;top:${y-R*2}px;width:${R*4}px;height:${R*4}px;border-radius:50%;z-index:800;background:radial-gradient(circle,rgba(235,247,255,.98) 0%,rgba(110,190,255,.65) 40%,rgba(40,120,255,0) 72%);animation:chainFlash .5s ease-out forwards;`);
-      for(let i=0;i<7;i++){
-        const ang=Math.random()*Math.PI*2,dist=CELL_SIZE*(.6+Math.random()*.9),sz=2+Math.random()*3;
-        add(`left:${x-sz/2}px;top:${y-sz/2}px;width:${sz}px;height:${sz}px;border-radius:50%;z-index:801;background:#e8f6ff;box-shadow:0 0 6px 2px rgba(110,190,255,.95);--sx:${Math.cos(ang)*dist}px;--sy:${Math.sin(ang)*dist}px;animation:chainSpark ${.35+Math.random()*.3}s ease-out forwards;`);
-      }
-    },t+60);
-    setTimeout(()=>{const c=clones[key(n)];if(c)c.remove();showStoneRemoveEffect(n.r,n.c,n.p);},t+420);
-    // 이미 전기가 도착한 이웃과 번개로 연결
+    const T=n.d*STEP;
+    setTimeout(()=>lit(n),T);                                  // 전기가 닿으면 파란 테두리
+    setTimeout(()=>{const c=clones[key(n)];if(c)c.remove();showStoneRemoveEffect(n.r,n.c,n.p,true);},T+420);
+    // 이미 전기가 닿은 이웃 돌에서 이 돌로 직선 연결
     [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
       const m=map[(n.r+dr)+','+(n.c+dc)];
-      if(m&&m.d<=n.d&&!(m.d===n.d&&key(m)>key(n)))arc(pos[key(m)],pos[key(n)],t);
+      if(!m||m.d>n.d||(m.d===n.d&&key(m)>key(n)))return;
+      const a=pos[key(m)],b=pos[key(n)];
+      const start=m.d<n.d?T-STEP+70:T+70;
+      const ln=document.createElementNS(svgNS,'line');
+      ln.setAttribute('x1',a.x);ln.setAttribute('y1',a.y);ln.setAttribute('x2',b.x);ln.setAttribute('y2',b.y);
+      ln.setAttribute('pathLength','1');ln.setAttribute('stroke','#4aa8ff');ln.setAttribute('stroke-width','4');ln.setAttribute('stroke-linecap','round');
+      ln.style.cssText=`stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 4px #4aa8ff);animation:chainLine ${LINE}ms ${Math.max(0,start)}ms linear forwards;`;
+      svg.appendChild(ln);
+      setTimeout(()=>ln.remove(),T+420);
     });
   });
-  setTimeout(()=>made.forEach(e=>e.remove()),total+100);
+  const maxD=Math.max(...nodes.map(n=>n.d));
+  setTimeout(()=>made.forEach(e=>e.remove()),maxD*STEP+900);
 }
 
 // ── 돌 제거 이펙트 ────────────────────────────────────────────
 // remove, chain, bomb, self_destruct 등 돌이 보드에서 제거될 때 호출
 // player: 1=흑, 2=백 (색상 결정용)
-function showStoneRemoveEffect(r,c,player){
+function showStoneRemoveEffect(r,c,player,noBroadcast){
+  if(!noBroadcast)fxBroadcast('rm',[r,c,player]);
   const{x,y}=getBoardCellScreenPos(r,c);
   const R=CELL_SIZE/2-2;
   const isBlack=player===1;
@@ -4370,7 +4364,7 @@ function showWinConfetti(player){
     },i*22);
   }
 }
-function afterWin(){clearInterval(timerInterval);clearInterval(oppTimerInterval);timerInterval=null;if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;document.getElementById('winOverlay').classList.remove('show');stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
+function afterWin(){clearInterval(timerInterval);clearInterval(oppTimerInterval);timerInterval=null;if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/fx').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;document.getElementById('winOverlay').classList.remove('show');stopOppTimer();if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showPage('page-menu');}}
 
 // ── 복기하기 (전략적 오목) ─────────────────────────────────────
 function closeWinAndReview(){
@@ -4585,6 +4579,8 @@ function doomApply(dir,side){
 }
 // 종말의 심판 연출 (약 4초): 암전 → 경계선 번쩍임 → 불길 파도가 선택한 영역을 쓸며 돌이 차례로 소멸
 function playDoomsdayEffect(dir,side,victims){
+  victims=victims||[];
+  fxBroadcast('doom',[dir,side,victims]);
   const cv=document.getElementById('boardCanvas');if(!cv)return;
   const rect=cv.getBoundingClientRect();
   const half=Math.floor(BS/2);
@@ -4623,7 +4619,7 @@ function playDoomsdayEffect(dir,side,victims){
   victims.forEach(v=>{
     const {x,y}=getBoardCellScreenPos(v.r,v.c);
     const st=add(`left:${x-R}px;top:${y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;z-index:798;background:${v.p===1?'radial-gradient(circle at 35% 30%,#555,#111)':'radial-gradient(circle at 35% 30%,#fff,#bbb)'};${v.p===1?'':'border:1px solid #ccc;'}`);
-    setTimeout(()=>{st.remove();showStoneRemoveEffect(v.r,v.c,v.p);},500+v.d*240);
+    setTimeout(()=>{st.remove();showStoneRemoveEffect(v.r,v.c,v.p,true);},500+v.d*240);
   });
   // 5) 경계선에서 튀는 불똥
   for(let i=0;i<40;i++){
@@ -4641,7 +4637,7 @@ function playDoomsdayEffect(dir,side,victims){
 // ── Status / quit ─────────────────────────────────────
 function setStatus(msg){const el=document.getElementById('statusBar');if(el)el.innerHTML=msg;}
 function confirmQuit(){document.getElementById('quitModal').classList.add('show');}
-function quitToMenu(){releaseGameLock();clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
+function quitToMenu(){releaseGameLock();clearInterval(timerInterval);clearInterval(oppTimerInterval);closeModal('quitModal');stopChat();if(onlineRoomId&&db){try{db.ref('rooms/'+onlineRoomId).off();db.ref('rooms/'+onlineRoomId+'/gameState').off();db.ref('rooms/'+onlineRoomId+'/whiteAction').off();db.ref('rooms/'+onlineRoomId+'/cardAnim').off();db.ref('rooms/'+onlineRoomId+'/fx').off();db.ref('rooms/'+onlineRoomId+'/timerTs').off();db.ref('rooms/'+onlineRoomId+'/chat').off();db.ref('rooms/'+onlineRoomId+'/surrender').off();}catch(e){}}onlineRoomId=null;onlineMyRole=null;stopOppTimer();
   if(window._practiceMode){exitPracticeMode();return;}
   if(currentUserData&&currentUserData.isGuest){showMenuWithGuest();}else if(currentUserData){showMenuWithUser();}else{showMenuAsVisitor();}}
 function startLocalGame(){onlineRoomId=null;onlineMyRole=null;const nick=currentUserData?currentUserData.nickname:'플레이어';showPage('page-game');initGame({nicknames:{black:nick+'(흑)',white:nick+'(백)'}});}
@@ -4988,6 +4984,7 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid,resume)
   }
   // 채팅 초기화
   initChat(code,role);
+  listenFx(code);
 
   // 항복 리스너: 상대방이 항복하면 내가 이김
   db.ref('rooms/'+code+'/surrender').on('value',snap=>{
