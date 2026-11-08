@@ -189,6 +189,23 @@ button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 .menu-dropdown-item:hover{background:var(--bg2);color:var(--accent);}
 /* MENU REDESIGN */
 .menu-wrap{padding-top:78px;}
+.menu-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+.menu-tile{display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--ui-bg);border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;color:var(--text);text-align:left;transition:background .15s,border-color .15s;}
+.menu-tile:active{background:var(--bg2);border-color:var(--accent);}
+.menu-tile svg{width:22px;height:22px;flex:none;color:var(--accent2);}
+.menu-info-card{width:100%;background:var(--ui-bg);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;}
+.menu-info-card h4{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px;}
+.mic-name{font-size:17px;font-weight:700;color:var(--text);}
+.mic-name span{font-size:12px;color:var(--accent);margin-left:6px;}
+.mic-meta{font-size:11.5px;color:var(--text3);margin:2px 0 6px;}
+.mic-desc{font-size:13px;color:var(--text2);line-height:1.5;}
+.mic-btn{margin-top:10px;width:100%;padding:9px;border:1px solid var(--accent2);border-radius:9px;background:var(--panel);color:var(--accent2);font-size:13px;font-weight:600;}
+.mic-stats{display:flex;justify-content:space-between;text-align:center;}
+.mic-stats b{display:block;font-size:20px;color:var(--text);}
+.mic-stats span{font-size:11px;color:var(--text3);}
+.mic-bar{height:7px;border-radius:99px;background:var(--bg2);margin-top:10px;overflow:hidden;}
+.mic-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+
 .menu-card-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;}
 .play-mode-row{display:flex;gap:8px;}
 .play-mode-btn{flex:1;background:var(--ui-bg);border:1.5px solid var(--border2);border-radius:11px;padding:18px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;font-weight:700;}
@@ -1107,6 +1124,14 @@ canvas#boardCanvas{display:block;touch-action:none;}
       <button class="menu-btn secondary" onclick="openPlayModePrompt('classic')" style="padding:14px;font-size:16px;">클래식 오목 플레이</button>
       <button class="menu-btn secondary" id="resumeGameBtn" onclick="resumeOnlineGame()" style="display:none;padding:14px;font-size:15px;border-color:var(--accent);color:var(--accent2);">진행 중인 온라인 대전 이어하기</button>
     </div>
+    <div class="menu-tiles">
+      <button class="menu-tile" onclick="showPage('page-book')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>카드 도감</button>
+      <button class="menu-tile" onclick="openGameGuide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>게임 방법</button>
+      <button class="menu-tile" onclick="openFriendsPage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="17" cy="8" r="2.5"/><path d="M21.5 21v-1a4.5 4.5 0 0 0-3-4.24"/></svg>친구 대전</button>
+      <button class="menu-tile" onclick="openNoticeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 0 1-3.2 2.4"/></svg>공지사항</button>
+    </div>
+    <div class="menu-info-card" id="menuDailyCard"></div>
+    <div class="menu-info-card" id="menuStatsCard"></div>
   </div>
   <!-- 구글 광고 영역 (실제 배포 시 data-ad-slot을 발급받은 값으로 교체) -->
   <div class="ad-slot">
@@ -1988,6 +2013,7 @@ function showMenuAsVisitor(){
   document.getElementById('menuAvatar').textContent='?';
   document.getElementById('menuNickname').textContent='로그인이 필요합니다';
   document.getElementById('menuRecord').textContent='탭하여 로그인 / 게스트로 시작';
+  renderMenuCards();
   const friendsBtn=document.getElementById('menuFriendsBtn');
   if(friendsBtn)friendsBtn.style.display='none';
   showPage('page-menu');
@@ -2007,6 +2033,7 @@ function showMenuWithGuest(){
   document.getElementById('menuAvatar').textContent='?';
   document.getElementById('menuNickname').textContent=nick;
   document.getElementById('menuRecord').textContent='게스트 (전적 저장 안 됨, 탭하여 로그인)';
+  renderMenuCards();
   showPage('page-menu');
   maybeOfferTutorial();
 }
@@ -2102,12 +2129,37 @@ async function onAuthChanged(user){
   currentUserData=preSnap.val();
   showMenuWithUser();
 }
+
+// ── 메인화면 정보 카드 ──
+function renderMenuCards(){
+  try{
+    const d=document.getElementById('menuDailyCard');
+    if(d&&typeof CARDS_DEF!=='undefined'&&CARDS_DEF.length){
+      const t=new Date(),seed=t.getFullYear()*372+t.getMonth()*31+t.getDate();
+      const c=CARDS_DEF[(seed*7919)%CARDS_DEF.length];
+      d.innerHTML='<h4>오늘의 카드</h4><div class="mic-name"></div><div class="mic-meta"></div><div class="mic-desc"></div><button class="mic-btn">체험해보기</button>';
+      d.querySelector('.mic-name').innerHTML='';d.querySelector('.mic-name').appendChild(document.createTextNode(c.name));
+      const sp=document.createElement('span');sp.textContent=STAR_CHAR[c.star];d.querySelector('.mic-name').appendChild(sp);
+      d.querySelector('.mic-meta').textContent=c.type+' · '+c.tag;
+      d.querySelector('.mic-desc').textContent=c.desc;
+      d.querySelector('.mic-btn').onclick=()=>startCardTrial(c.id);
+    }
+    const st=document.getElementById('menuStatsCard');
+    if(st){
+      const u=currentUserData;
+      if(!u||u.isGuest){st.innerHTML='<h4>내 전적</h4><div class="mic-desc">로그인하면 전적이 기록돼요. 위쪽 프로필을 눌러 로그인해보세요.</div>';return;}
+      const w=u.wins||0,l=u.losses||0,n=w+l,r=n?Math.round(w/n*100):0;
+      st.innerHTML='<h4>내 전적</h4><div class="mic-stats"><div><b>'+n+'</b><span>전체</span></div><div><b>'+w+'</b><span>승</span></div><div><b>'+l+'</b><span>패</span></div><div><b>'+r+'%</b><span>승률</span></div></div><div class="mic-bar"><i style="width:'+r+'%"></i></div>';
+    }
+  }catch(e){}
+}
 function showMenuWithUser(){
   if(!currentUserData)return;
   const nick=currentUserData.nickname||'?';
   document.getElementById('menuAvatar').textContent=nick.charAt(0).toUpperCase();
   document.getElementById('menuNickname').textContent=nick;
   document.getElementById('menuRecord').textContent=`승 ${currentUserData.wins||0} / 패 ${currentUserData.losses||0}`;
+  renderMenuCards();
   // 설정 페이지 정보 채우기
   const sn=document.getElementById('settingsNickname');if(sn)sn.textContent=nick;
   const su=document.getElementById('settingsUsername');if(su)su.textContent=currentUserData.username?'@'+currentUserData.username:(currentUserData.email||'-');
