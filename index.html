@@ -89,6 +89,11 @@ button,input{cursor:pointer;font-family:'Pretendard',-apple-system,sans-serif;}
 @keyframes doomShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,-2px);}60%{transform:translate(4px,2px);}75%{transform:translate(-2px,1px);}}
 @keyframes doomTitle{0%{transform:translate(-50%,-50%) scale(2.4);letter-spacing:.9em;opacity:0;filter:blur(8px);}22%{transform:translate(-50%,-50%) scale(1);letter-spacing:.18em;opacity:1;filter:blur(0);}78%{transform:translate(-50%,-50%) scale(1.06);letter-spacing:.2em;opacity:1;}100%{transform:translate(-50%,-50%) scale(1.25);letter-spacing:.3em;opacity:0;}}
 @keyframes doomSpark{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0;}}
+@keyframes skConv{0%{transform:scale(2.2);opacity:0}35%{opacity:1}75%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes skRipple{0%{transform:scale(.6);opacity:.95}100%{transform:scale(2.3);opacity:0}}
+@keyframes skArea{0%{opacity:0;transform:scale(.9)}25%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+@keyframes skDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes skFade{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
 @keyframes chainLine{from{stroke-dashoffset:1;}to{stroke-dashoffset:0;}}
 @keyframes ripple{0%{transform:scale(0.3);opacity:0.8;}100%{transform:scale(2.2);opacity:0;}}
 /* ── 승리 이펙트 ── */
@@ -3120,7 +3125,7 @@ function listenFx(code){
     if(first){first=false;_fxLastSeen=v?v.seq:null;return;} // 입장 시점의 오래된 값은 무시
     if(!v||v.by===onlineMyRole||v.seq===_fxLastSeen)return;
     _fxLastSeen=v.seq;
-    const fns={rm:showStoneRemoveEffect,trap:showTrapEffect,chain:playChainEffect,doom:playDoomsdayEffect};
+    const fns={rm:showStoneRemoveEffect,trap:showTrapEffect,chain:playChainEffect,doom:playDoomsdayEffect,skill:playSkillEffect};
     window._fxRemote=true;
     try{
       _fxNorm(v.list||[]).forEach(it=>{
@@ -3165,6 +3170,39 @@ function showTrapEffect(r,c){
 
 // 연쇄 체인 연출 (심플): 시작 돌에 파란 테두리가 켜지고, 파란 직선이 인접한 돌로 이어지며
 // 연결된 돌마다 파란 테두리가 켜진다. 잠시 뒤 돌이 차례로 사라진다.
+// ── 스킬 시전 연출 (조용하고 단정하게: 얇은 선, 은은한 빛, 한 번만) ──
+// kind: fortify | protect | sanctuary | ban | exile | mark | bomb | void | place | rewind
+// 상대 화면에도 똑같이 재생된다(fxBroadcast). 함정/지뢰 설치는 숨김 정보라 쓰지 않는다.
+function playSkillEffect(kind,a){
+  a=a||[];fxBroadcast('skill',[kind,a]);
+  const cv=document.getElementById('boardCanvas');if(!cv)return;
+  const rect=cv.getBoundingClientRect(),S=CELL_SIZE*rect.width/cv.width,made=[];
+  const mk=(css,html)=>{const e=document.createElement('div');e.style.cssText='position:fixed;pointer-events:none;z-index:797;'+css;if(html)e.innerHTML=html;document.body.appendChild(e);made.push(e);return e;};
+  const ring=(r,c,col,anim,dur,delay,w)=>{const p=getBoardCellScreenPos(r,c),R=S/2-1;
+    mk(`left:${p.x-R}px;top:${p.y-R}px;width:${R*2}px;height:${R*2}px;border-radius:50%;border:${w||3}px solid ${col};box-shadow:0 0 12px ${col},inset 0 0 8px ${col};animation:${anim} ${dur}ms ${delay||0}ms ease-out both;`);};
+  const area=(r0,c0,nr,nc,col,fill,dur)=>{const p=getBoardCellScreenPos(r0,c0);
+    mk(`left:${p.x-S/2}px;top:${p.y-S/2}px;width:${S*nc}px;height:${S*nr}px;border:2px solid ${col};background:${fill};box-shadow:0 0 16px ${col};animation:skArea ${dur}ms ease-out both;`);};
+  let life=1500;
+  if(kind==='fortify'){const[r,c]=a;ring(r,c,'#f2b01e','skConv',800);ring(r,c,'rgba(255,255,255,.8)','skRipple',900,450,1.5);}
+  else if(kind==='protect'){const[r,c]=a;area(r,c,3,3,'#f2b01e','rgba(242,176,30,.14)',1100);}
+  else if(kind==='sanctuary'){const[r,c]=a;area(r,c,2,2,'#2ea05a','rgba(46,160,90,.18)',1100);}
+  else if(kind==='ban'){const[r,c]=a,p=getBoardCellScreenPos(r,c);
+    const ln=(d)=>`<path d="${d}" pathLength="1" stroke="#c62828" stroke-width="9" stroke-linecap="round" fill="none" style="stroke-dasharray:1;stroke-dashoffset:1;animation:skDraw 260ms ease-out forwards;"/>`;
+    const e=mk(`left:${p.x-S/2}px;top:${p.y-S/2}px;width:${S}px;height:${S}px;background:rgba(198,40,40,.2);border:2px solid #c62828;animation:skFade 1100ms ease-out both;`,
+      `<svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block">${ln('M28 28L72 72')}${ln('M72 28L28 72').replace('260ms','260ms 180ms')}</svg>`);}
+  else if(kind==='exile'){const[r,c]=a;ring(r,c,'#8a8f9f','skRipple',900,0,2);ring(r,c,'#8a8f9f','skRipple',900,300,2);}
+  else if(kind==='mark'){const[r,c,col]=a;ring(r,c,col||'#c62828','skRipple',900,0,2.5);ring(r,c,col||'#c62828','skConv',700);}
+  else if(kind==='bomb'){const[r,c,sz]=a;const r0=sz===2?r:r-1,c0=sz===2?c:c-1;area(r0,c0,sz,sz,'#c62828','rgba(198,40,40,.16)',1000);}
+  else if(kind==='void'){const[r,c]=a;area(r-1,c-1,3,3,'#9b1c28','rgba(110,15,28,.3)',1100);}
+  else if(kind==='place'){(a[0]&&typeof a[0]==='object'?a:[a]).forEach(([r,c])=>{ring(r,c,'#4f9cff','skRipple',800,0,2.5);});}
+  else if(kind==='rewind'){
+    mk(`left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;background:rgba(120,160,255,.2);animation:skFade 900ms ease-out both;`);
+    const ln=mk(`left:${rect.left}px;top:${rect.top+rect.height-2}px;width:${rect.width}px;height:2px;background:linear-gradient(90deg,transparent,#9db8ff,transparent);box-shadow:0 0 12px #7fa0ff;`);
+    try{ln.animate([{transform:'translateY(0)',opacity:1},{transform:`translateY(${-rect.height}px)`,opacity:0.2}],{duration:800,easing:'ease-in-out',fill:'forwards'});}catch(e){}
+    life=1100;
+  }
+  setTimeout(()=>made.forEach(e=>e.remove()),life);
+}
 function playChainEffect(nodes){
   nodes=nodes||[];if(!nodes.length)return;
   fxBroadcast('chain',[nodes]);
@@ -3263,12 +3301,40 @@ function drawBoard(){
   ctx.strokeStyle='#8b6914';ctx.lineWidth=0.8;
   for(let i=0;i<N;i++){ctx.beginPath();ctx.moveTo(OFF+i*CELL_SIZE,OFF);ctx.lineTo(OFF+i*CELL_SIZE,OFF+(N-1)*CELL_SIZE);ctx.stroke();ctx.beginPath();ctx.moveTo(OFF,OFF+i*CELL_SIZE);ctx.lineTo(OFF+(N-1)*CELL_SIZE,OFF+i*CELL_SIZE);ctx.stroke();}
   [[3,3],[3,7],[3,11],[7,3],[7,7],[7,11],[11,3],[11,7],[11,11]].forEach(([r,c])=>{ctx.beginPath();ctx.arc(OFF+c*CELL_SIZE,OFF+r*CELL_SIZE,3,0,Math.PI*2);ctx.fillStyle='#8b6914';ctx.fill();});
-  sanctuaryZones.filter(z=>z.turns>0).forEach(z=>{ctx.fillStyle='rgba(46,125,50,0.1)';ctx.fillRect(OFF+z.c*CELL_SIZE-H,OFF+z.r*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);ctx.strokeStyle='rgba(46,125,50,0.4)';ctx.lineWidth=1.5;ctx.strokeRect(OFF+z.c*CELL_SIZE-H,OFF+z.r*CELL_SIZE-H,CELL_SIZE*2,CELL_SIZE*2);});
-  voidZones.filter(z=>z.turns>0).forEach(z=>{ctx.fillStyle='rgba(198,40,40,0.07)';ctx.fillRect(OFF+(z.c-1)*CELL_SIZE,OFF+(z.r-1)*CELL_SIZE,CELL_SIZE*3,CELL_SIZE*3);ctx.strokeStyle='rgba(198,40,40,0.25)';ctx.lineWidth=1;ctx.strokeRect(OFF+(z.c-1)*CELL_SIZE,OFF+(z.r-1)*CELL_SIZE,CELL_SIZE*3,CELL_SIZE*3);});
-  Object.keys(banCells).forEach(k=>{if(banCells[k].turns>0){const[r,c]=k.split(',').map(Number);ctx.fillStyle='rgba(198,40,40,0.12)';ctx.fillRect(OFF+c*CELL_SIZE-H,OFF+r*CELL_SIZE-H,CELL_SIZE,CELL_SIZE);ctx.fillStyle='rgba(198,40,40,0.65)';ctx.font=`bold ${Math.round(CELL_SIZE*0.36)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('X',OFF+c*CELL_SIZE,OFF+r*CELL_SIZE);}});
-  Object.entries(prophetCells).forEach(([k,info])=>{const[r,c]=k.split(',').map(Number);ctx.strokeStyle=info.owner===1?'rgba(0,0,0,0.45)':'rgba(200,200,200,0.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(OFF+c*CELL_SIZE,OFF+r*CELL_SIZE,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);});
-  Object.entries(dangerMarks).forEach(([k])=>{const[r,c]=k.split(',').map(Number);ctx.fillStyle='rgba(198,40,40,0.8)';ctx.font=`bold ${Math.round(CELL_SIZE*0.24)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('위험',OFF+c*CELL_SIZE,OFF+r*CELL_SIZE-H);});
-  if(constructionMark){const[r,c]=constructionMark.key.split(',').map(Number);ctx.strokeStyle='#ff9800';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(OFF+c*CELL_SIZE,OFF+r*CELL_SIZE,H-2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+  // 보호구역: 초록 면 + 굵은 테두리 + 모서리 꺾쇠
+  sanctuaryZones.filter(z=>z.turns>0).forEach(z=>{
+    const x0=OFF+z.c*CELL_SIZE-H,y0=OFF+z.r*CELL_SIZE-H,w=CELL_SIZE*2,L=Math.round(CELL_SIZE*0.28);
+    ctx.fillStyle='rgba(46,160,90,0.17)';ctx.fillRect(x0,y0,w,w);
+    ctx.strokeStyle='rgba(46,160,90,0.8)';ctx.lineWidth=2;ctx.strokeRect(x0+1,y0+1,w-2,w-2);
+    ctx.lineWidth=3.5;ctx.strokeStyle='#2ea05a';ctx.beginPath();
+    [[x0,y0,1,1],[x0+w,y0,-1,1],[x0,y0+w,1,-1],[x0+w,y0+w,-1,-1]].forEach(([px,py,dx,dy])=>{ctx.moveTo(px+dx*L,py);ctx.lineTo(px,py);ctx.lineTo(px,py+dy*L);});
+    ctx.stroke();
+  });
+  // 공허: 어두운 붉은 면 + 사선 해칭 + 굵은 테두리
+  voidZones.filter(z=>z.turns>0).forEach(z=>{
+    const x0=OFF+(z.c-1)*CELL_SIZE-H,y0=OFF+(z.r-1)*CELL_SIZE-H,w=CELL_SIZE*3;
+    ctx.fillStyle='rgba(120,20,30,0.24)';ctx.fillRect(x0,y0,w,w);
+    ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,w);ctx.clip();
+    ctx.strokeStyle='rgba(150,25,35,0.35)';ctx.lineWidth=1.5;ctx.beginPath();
+    for(let i=-w;i<w;i+=11){ctx.moveTo(x0+i,y0+w);ctx.lineTo(x0+i+w,y0);}
+    ctx.stroke();ctx.restore();
+    ctx.strokeStyle='rgba(180,30,40,0.85)';ctx.lineWidth=2;ctx.strokeRect(x0+1,y0+1,w-2,w-2);
+  });
+  // 착수 금지: 붉은 면 + 굵은 X
+  Object.keys(banCells).forEach(k=>{if(banCells[k].turns>0){
+    const[r,c]=k.split(',').map(Number),x0=OFF+c*CELL_SIZE-H,y0=OFF+r*CELL_SIZE-H,m=CELL_SIZE*0.28;
+    ctx.fillStyle='rgba(198,40,40,0.2)';ctx.fillRect(x0,y0,CELL_SIZE,CELL_SIZE);
+    ctx.strokeStyle='rgba(198,40,40,0.7)';ctx.lineWidth=1.5;ctx.strokeRect(x0+1,y0+1,CELL_SIZE-2,CELL_SIZE-2);
+    ctx.strokeStyle='rgba(198,40,40,0.95)';ctx.lineWidth=2.6;ctx.lineCap='round';ctx.beginPath();
+    ctx.moveTo(x0+m,y0+m);ctx.lineTo(x0+CELL_SIZE-m,y0+CELL_SIZE-m);ctx.moveTo(x0+CELL_SIZE-m,y0+m);ctx.lineTo(x0+m,y0+CELL_SIZE-m);ctx.stroke();ctx.lineCap='butt';
+  }});
+  // 예언자: 이중 링(어두운 외곽 + 소유자 색)
+  Object.entries(prophetCells).forEach(([k,info])=>{
+    const[r,c]=k.split(',').map(Number),x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE;
+    ctx.setLineDash([4,3]);ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.beginPath();ctx.arc(x,y,H-3,0,Math.PI*2);ctx.stroke();
+    ctx.lineWidth=2.2;ctx.strokeStyle=info.owner===1?'#1c1c20':'#ffffff';ctx.beginPath();ctx.arc(x,y,H-3,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=info.owner===1?'rgba(20,20,25,0.55)':'rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
   const myP=currentPlayer;
   Object.entries(traps).forEach(([k,info])=>{if(info.owner!==myP)return;const[r,c]=k.split(',').map(Number);ctx.fillStyle='rgba(230,81,0,0.8)';ctx.font=`bold ${Math.round(CELL_SIZE*0.24)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(info.type==='mine'?'지뢰':'함정',OFF+c*CELL_SIZE,OFF+r*CELL_SIZE);});
   bombs.filter(b=>b.turns>0).forEach(b=>{
@@ -3286,9 +3352,18 @@ function drawBoard(){
     const g=ctx.createRadialGradient(x-R*.3,y-R*.3,R*.05,x,y,R);
     if(v===1){g.addColorStop(0,'#777');g.addColorStop(1,'#111');}else{g.addColorStop(0,'#fff');g.addColorStop(1,'#bbb');}
     ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-    if(isEx){ctx.globalAlpha=0.3;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.globalAlpha=1;}
-    if(isFort){ctx.strokeStyle='#f9a825';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R+1.5,0,Math.PI*2);ctx.stroke();}
+    if(isEx){ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle='rgba(170,175,188,0.6)';ctx.fill();
+      ctx.setLineDash([3,3]);ctx.strokeStyle='#7d8394';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R+1.5,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+    if(isFort){ctx.save();ctx.shadowColor='rgba(242,176,30,0.9)';ctx.shadowBlur=7;ctx.strokeStyle='#f2b01e';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,R+1.5,0,Math.PI*2);ctx.stroke();ctx.restore();
+      ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,R-2.5,0,Math.PI*2);ctx.stroke();}
   }
+  // 돌 위에 걸리는 표식(위험 예고/공사 예고)은 돌 위에 그려야 보인다
+  const badge=(r,c,txt,col)=>{const cx=OFF+c*CELL_SIZE,cy=OFF+r*CELL_SIZE,w=Math.round(CELL_SIZE*0.7),h=Math.round(CELL_SIZE*0.3),bx=cx-w/2,by=cy-H-h*0.35;
+    ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(cx,cy,H-1,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle=col;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,w,h,h/2);else ctx.rect(bx,by,w,h);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(CELL_SIZE*0.2)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,cx,by+h/2+0.5);};
+  Object.keys(dangerMarks).forEach(k=>{const[r,c]=k.split(',').map(Number);badge(r,c,'위험','#c62828');});
+  if(constructionMark){const[r,c]=constructionMark.key.split(',').map(Number);badge(r,c,'공사','#ef7d00');}
   if(phase==='place'&&hoverCell&&!pendingSelected){const{r,c}=hoverCell;if(board[r][c]===0&&!isCellBanned(r,c)){const x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE,R=H-2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=currentPlayer===1?'rgba(0,0,0,0.2)':'rgba(255,255,255,0.3)';ctx.fill();}}
   if(pendingSelected){const{r,c}=pendingSelected;const x=OFF+c*CELL_SIZE,y=OFF+r*CELL_SIZE,R=H-2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=currentPlayer===1?'rgba(0,0,0,0.33)':'rgba(255,255,255,0.52)';ctx.fill();ctx.strokeStyle=currentPlayer===1?'#333':'#ddd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R+2,0,Math.PI*2);ctx.stroke();}
   // ── 카드 선택 중 (스킬 사용 전) 범위 미리보기 ──
@@ -3921,7 +3996,7 @@ function applyEffect(card){
   if(eff==='reserve'){reserveNext[pKey]=true;setStatus('다음 턴 착수 2회!');endTurn();return;}
   if(eff==='evade'){evadeEffect={owner:p,turns:4};setStatus('회피 효과 발동!');endGoPlace();return;}
   if(eff==='time_rewind'){
-    if(boardHistory.length>=2){const snap=boardHistory[boardHistory.length-2];board=JSON.parse(JSON.stringify(snap.board));banCells={...snap.banCells};sanctuaryZones=[...snap.sanctuaryZones];voidZones=[...snap.voidZones];bombs=[...snap.bombs];fortified=snap.fortified?{...snap.fortified}:{};traps={...snap.traps};prophetCells=snap.prophetCells?JSON.parse(JSON.stringify(snap.prophetCells)):{};exiledCells=snap.exiledCells?JSON.parse(JSON.stringify(snap.exiledCells)):{};dangerMarks=snap.dangerMarks?JSON.parse(JSON.stringify(snap.dangerMarks)):{};constructionMark=snap.constructionMark?{...snap.constructionMark}:null;evadeEffect=snap.evadeEffect?{...snap.evadeEffect}:null;setStatus('2턴 전으로 되돌렸습니다!');}else setStatus('기록이 부족합니다.');endGoPlace();return;
+    if(boardHistory.length>=2){const snap=boardHistory[boardHistory.length-2];board=JSON.parse(JSON.stringify(snap.board));banCells={...snap.banCells};sanctuaryZones=[...snap.sanctuaryZones];voidZones=[...snap.voidZones];bombs=[...snap.bombs];fortified=snap.fortified?{...snap.fortified}:{};traps={...snap.traps};prophetCells=snap.prophetCells?JSON.parse(JSON.stringify(snap.prophetCells)):{};exiledCells=snap.exiledCells?JSON.parse(JSON.stringify(snap.exiledCells)):{};dangerMarks=snap.dangerMarks?JSON.parse(JSON.stringify(snap.dangerMarks)):{};constructionMark=snap.constructionMark?{...snap.constructionMark}:null;evadeEffect=snap.evadeEffect?{...snap.evadeEffect}:null;playSkillEffect('rewind',[]);setStatus('2턴 전으로 되돌렸습니다!');}else setStatus('기록이 부족합니다.');endGoPlace();return;
   }
   if(eff==='irrational'){irrationalTurns[oKey]=4;setStatus('비합리! 상대 2턴(4차례) 카드 사용 금지!');endGoPlace();return;}
   if(eff==='doomsday'){showDoomsdayPicker();return;}
@@ -3934,11 +4009,11 @@ function applyEffect(card){
   if(eff==='card_exchange'){const my1=hands[pKey].filter(c=>c.star===1);if(!my1.length){setStatus('손패에 1성 카드 없음.');endGoPlace();return;}showPick('카드 교체','버릴 1성 카드를 선택합니다.',my1,1,false,(picked)=>{const i=hands[pKey].findIndex(c=>c.uid===picked[0].uid);if(i!==-1)hands[pKey].splice(i,1);dealCardsSafe(pKey,1,null,2);const pool2=CARDS_DEF.filter(c=>c.star===2&&c.type!=='별');const r2=pool2[Math.floor(Math.random()*pool2.length)];if(hands[pKey].length<8)hands[pKey].push({...r2,uid:r2.id+'_ex_'+Math.random().toString(36).slice(2)});setStatus('카드 교체 완료!');endGoPlace();});return;}
   // Click-based
   const CE={
-    fortify:['own',1,(cs)=>{cs.forEach(([r,c])=>fortified[r+','+c]=4);setStatus('굳히기 (2턴)!');endGoPlace();}],
-    prophet:['empty',1,(cs)=>{prophetCells[cs[0][0]+','+cs[0][1]]={owner:p,turnsLeft:1};setStatus('예언자!');endGoPlace();}],
-    danger_mark:['opp',1,(cs)=>{dangerMarks[cs[0][0]+','+cs[0][1]]={turnsLeft:2,target:opp};setStatus('위험 예고!');endGoPlace();}],
-    construction:['opp',1,(cs)=>{constructionMark={key:cs[0][0]+','+cs[0][1],forPlayer:opp};setStatus('공사 예고!');endGoPlace();}],
-    ban_place:['empty',1,(cs)=>{banCells[cs[0][0]+','+cs[0][1]]={turns:6};setStatus('착수 금지!');endGoPlace();}],
+    fortify:['own',1,(cs)=>{cs.forEach(([r,c])=>{fortified[r+','+c]=4;playSkillEffect('fortify',[r,c]);});setStatus('굳히기 (2턴)!');endGoPlace();}],
+    prophet:['empty',1,(cs)=>{prophetCells[cs[0][0]+','+cs[0][1]]={owner:p,turnsLeft:1};playSkillEffect('mark',[cs[0][0],cs[0][1],'#9aa6c8']);setStatus('예언자!');endGoPlace();}],
+    danger_mark:['opp',1,(cs)=>{dangerMarks[cs[0][0]+','+cs[0][1]]={turnsLeft:2,target:opp};playSkillEffect('mark',[cs[0][0],cs[0][1],'#c62828']);setStatus('위험 예고!');endGoPlace();}],
+    construction:['opp',1,(cs)=>{constructionMark={key:cs[0][0]+','+cs[0][1],forPlayer:opp};playSkillEffect('mark',[cs[0][0],cs[0][1],'#ef7d00']);setStatus('공사 예고!');endGoPlace();}],
+    ban_place:['empty',1,(cs)=>{banCells[cs[0][0]+','+cs[0][1]]={turns:6};playSkillEffect('ban',[cs[0][0],cs[0][1]]);setStatus('착수 금지!');endGoPlace();}],
     trap:['empty',1,(cs)=>{cs.forEach(([r,c])=>traps[r+','+c]={owner:p,type:'trap'});setStatus('함정 설치!');endGoPlace();}],
     double_mine:['empty',2,(cs)=>{cs.forEach(([r,c])=>traps[r+','+c]={owner:p,type:'mine'});setStatus('지뢰 2개!');endGoPlace();}],
     // 제거: 상대(또는 아무) 돌 1개 즉시 제거. 굳힌 돌은 제거 불가.
@@ -3950,11 +4025,11 @@ function applyEffect(card){
       board[r][c]=0;delete fortified[r+','+c];
       setStatus('제거!');endGoPlace();
     }],
-    exile:['stone',1,(cs)=>{exiledCells[cs[0][0]+','+cs[0][1]]={turns:4};setStatus('왕따! (2턴=4차례 지속)');endGoPlace();}],
-    cell_clear:['any',1,(cs)=>{const k=cs[0][0]+','+cs[0][1];const[cr,cc]=cs[0];delete banCells[k];delete prophetCells[k];delete traps[k];delete dangerMarks[k];delete exiledCells[k];// [버그수정] 해당 칸에 있는 폭탄도 제거
+    exile:['stone',1,(cs)=>{exiledCells[cs[0][0]+','+cs[0][1]]={turns:4};playSkillEffect('exile',[cs[0][0],cs[0][1]]);setStatus('왕따! (2턴=4차례 지속)');endGoPlace();}],
+    cell_clear:['any',1,(cs)=>{const k=cs[0][0]+','+cs[0][1];const[cr,cc]=cs[0];playSkillEffect('mark',[cr,cc,'#5aa8ff']);delete banCells[k];delete prophetCells[k];delete traps[k];delete dangerMarks[k];delete exiledCells[k];// [버그수정] 해당 칸에 있는 폭탄도 제거
 bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace();}],
-    bomb_s:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:2,owner:p,turns:2});setStatus('소형 폭탄!');endGoPlace();}],
-    bomb_l:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:3,owner:p,turns:2});setStatus('대형 폭탄!');endGoPlace();}],
+    bomb_s:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:2,owner:p,turns:2});playSkillEffect('bomb',[cs[0][0],cs[0][1],2]);setStatus('소형 폭탄!');endGoPlace();}],
+    bomb_l:['empty',1,(cs)=>{bombs.push({r:cs[0][0],c:cs[0][1],size:3,owner:p,turns:2});playSkillEffect('bomb',[cs[0][0],cs[0][1],3]);setStatus('대형 폭탄!');endGoPlace();}],
     // 분열(가로): 선택 돌 제거 후 좌우에 내 돌 배치. 상대 돌이 있는 방향은 건너뜀.
     split_h:['own',1,(cs)=>{
       const[r,c]=cs[0];
@@ -3979,7 +4054,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       if(r+1<BS&&board[r+1][c]===p&&checkWin(r+1,c,p)){_lastWinCells=findWinCells(r+1,c,p,board,BS,isExiled);showWin(p);return;}
       setStatus('분열(세로)!');endGoPlace();
     }],
-    sanctuary:['any',1,(cs)=>{const[r,c]=cs[0];sanctuaryZones.push({r:Math.min(r,BS-2),c:Math.min(c,BS-2),turns:6});setStatus('보호구역!');endGoPlace();}],
+    sanctuary:['any',1,(cs)=>{const[r,c]=cs[0];sanctuaryZones.push({r:Math.min(r,BS-2),c:Math.min(c,BS-2),turns:6});playSkillEffect('sanctuary',[Math.min(r,BS-2),Math.min(c,BS-2)]);setStatus('보호구역!');endGoPlace();}],
     // 자폭: 내 돌 1개를 폭발 → 주변 8방향 돌 전부 제거 (굳힌 돌 제외)
     self_destruct:['own',1,(cs)=>{
       const[r,c]=cs[0];
@@ -4002,11 +4077,11 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
       }
       setStatus('자폭!');endGoPlace();
     }],
-    extra_place:['empty',1,(cs)=>{const[r,c]=cs[0];board[r][c]=p;if(checkWin(r,c,p)){_lastWinCells=findWinCells(r,c,p,board,BS,isExiled);showWin(p);return;}setStatus('설치! 착수도 가능합니다.');endGoPlace();}],
+    extra_place:['empty',1,(cs)=>{const[r,c]=cs[0];board[r][c]=p;playSkillEffect('place',[[r,c]]);if(checkWin(r,c,p)){_lastWinCells=findWinCells(r,c,p,board,BS,isExiled);showWin(p);return;}setStatus('설치! 착수도 가능합니다.');endGoPlace();}],
     // 공허: 3×3 영역 돌 전부 즉시 제거 + 3턴 동안 해당 영역 사용 불가
     void_zone:['any',1,(cs)=>{
       const[r,c]=cs[0];
-      voidZones.push({r,c,turns:6});
+      voidZones.push({r,c,turns:6});playSkillEffect('void',[r,c]);
       for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
         const nr=r+dr,nc=c+dc;
         if(nr>=0&&nr<BS&&nc>=0&&nc<BS&&!isFort(nr,nc)){
@@ -4049,7 +4124,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
   if(eff==='protect_order'){startClick('any',1,(cs)=>{const[r,c]=cs[0];
     // [버그수정] 미리보기(좌상단 기준 3x3, 보드 경계 클램프)와 실제 적용 범위가 어긋나 있던 문제 수정.
     // 기존엔 클릭한 칸을 '중심'으로 -1~+1 계산해서, 미리보기가 보여준 영역과 실제 굳혀지는 영역이 달랐음.
-    const tr=Math.min(r,BS-3),tc=Math.min(c,BS-3);
+    const tr=Math.min(r,BS-3),tc=Math.min(c,BS-3);playSkillEffect('protect',[tr,tc]);
     for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){const nr=tr+dr,nc=tc+dc;if(board[nr][nc]===p)fortified[nr+','+nc]=4;}
     setStatus('보호명령! 3×3 영역 내 내 돌 2턴 굳힘.');endGoPlace();},'protect_order');return;}
   if(eff==='blind'){blindTurns=4;setStatus('블라인드 발동! 2턴 동안 상대에게 카드 정보가 숨겨집니다.');endGoPlace();return;}
@@ -4069,7 +4144,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
     if(adjEmpty.length===0){setStatus('이동 가능한 인접 빈 칸이 없습니다!');endGoPlace();return;}
     clickState={mode:'empty',max:1,collected:[],moveRange:adjEmpty,moveFrom:[r,c],_skillEff:'move_stone',callback:(cs2)=>{
       const[nr,nc]=cs2[0];
-      board[nr][nc]=board[r][c];board[r][c]=0;
+      board[nr][nc]=board[r][c];board[r][c]=0;playSkillEffect('place',[[nr,nc]]);
       if(isFort(r,c)){delete fortified[r+','+c];fortified[nr+','+nc]=4;}
       // [버그수정] 돌 이동 후 승리 체크 누락
       if(checkWin(nr,nc,p)){_lastWinCells=findWinCells(nr,nc,p,board,BS,isExiled);showWin(p);return;}
@@ -4090,7 +4165,7 @@ bombs=bombs.filter(b=>!(b.r===cr&&b.c===cc));setStatus('칸 방어!');endGoPlace
         pickSecond(); // 다시 선택
         return;
       }
-      board[r1][c1]=p;board[r2][c2]=p;
+      board[r1][c1]=p;board[r2][c2]=p;playSkillEffect('place',[[r1,c1],[r2,c2]]);
       if(checkWin(r1,c1,p)){_lastWinCells=findWinCells(r1,c1,p,board,BS,isExiled);showWin(p);return;}
       if(checkWin(r2,c2,p)){_lastWinCells=findWinCells(r2,c2,p,board,BS,isExiled);showWin(p);return;}
       setStatus('불안정한 두 돌!');endGoPlace();
