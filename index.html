@@ -2795,7 +2795,7 @@ let cardUsedThisTurn=false; // {card, idx} - 아직 손패에서 안 뺀 카드
 let blindTurns=0;
 let isOnlineGame=false,onlineRoomId=null,onlineMyRole=null;
 let gameNicknames={black:'흑',white:'백'};
-let winnerDetermined=false;
+let winnerDetermined=false,_winReason='',_winShowing=false;
 const TIMER_MAX=45;
 
 function buildDeck(){
@@ -3004,7 +3004,7 @@ function showMyPanelUI(pKey, show){
 }
 function initGame(opts={}){
   isOnlineGame=opts.online||false;onlineRoomId=opts.roomId||null;onlineMyRole=opts.myRole||null;
-  gameNicknames=opts.nicknames||{black:'흑',white:'백'};winnerDetermined=false;_onlineWinnerPlayer=null;
+  gameNicknames=opts.nicknames||{black:'흑',white:'백'};winnerDetermined=false;_winReason='';_winShowing=false;_onlineWinnerPlayer=null;
   // 온라인에서 내 팀을 항상 왼쪽에
   applyPanelOrder();
   board=Array.from({length:BS},()=>new Array(BS).fill(0));
@@ -4280,7 +4280,7 @@ function findWinCells(r,c,p,bd,size,exiledFn){
   return [];
 }
 function showWin(player,reason){
-  if(winnerDetermined)return;winnerDetermined=true;_onlineWinnerPlayer=player;clearInterval(timerInterval);
+  if(winnerDetermined)return;winnerDetermined=true;_winReason=reason||'';_onlineWinnerPlayer=player;clearInterval(timerInterval);
   if(isOnlineGame)clearResume();
   const name=player===1?'흑 ('+gameNicknames.black+')':'백 ('+gameNicknames.white+')';
   if(isOnlineGame&&currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(player===myP);}
@@ -4826,7 +4826,7 @@ function serializeGameState(){
     currentPlayer,turnCount,phase,
     hands,mergeSlots,
     extraPlace,reserveNext,irrationalTurns,starCards,
-    blindTurns,winnerDetermined,winnerPlayer:_onlineWinnerPlayer,gameNicknames
+    blindTurns,winnerDetermined,winnerPlayer:_onlineWinnerPlayer,winReason:_winReason,gameNicknames
   });
 }
 function deserializeGameState(raw){
@@ -5175,15 +5175,20 @@ function startOnlineGame(code,role,blackNick,whiteNick,blackUid,whiteUid,resume)
     deserializeGameState(val.data);
     resizeBoard();
     if(winnerDetermined){
-      const wp=JSON.parse(val.data).winnerPlayer;
-      if(wp&&!document.getElementById('winOverlay').classList.contains('show')){
+      const _wd=JSON.parse(val.data),wp=_wd.winnerPlayer,wReason=_wd.winReason||'';
+      if(wp&&!_winShowing&&!document.getElementById('winOverlay').classList.contains('show')){
+        _winShowing=true;
         clearInterval(timerInterval);
         const name=wp===1?'흑 ('+gameNicknames.black+')':'백 ('+gameNicknames.white+')';
-        document.getElementById('winTitle').textContent=name+' 승리!';
-        document.getElementById('winDesc').textContent='5개를 연속으로 놓아 승리!';
-        document.getElementById('winOverlay').classList.add('show');
-        clearResume();
-        if(currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(wp===myP);}
+        const finish=()=>{
+          document.getElementById('winTitle').textContent=name+' 승리!';
+          document.getElementById('winDesc').textContent=wReason||'5개를 연속으로 놓아 승리!';
+          document.getElementById('winOverlay').classList.add('show');
+          clearResume();
+          if(currentUser){const myP=onlineMyRole==='black'?1:2;recordResult(wp===myP);}
+        };
+        // 별 5장 완성 승리는 상대 화면에서도 같은 연출을 먼저 보여준다
+        if(wReason.includes('별을 모두'))playStarWinEffect([],wp,finish);else finish();
       }
       renderAll();
       return;
