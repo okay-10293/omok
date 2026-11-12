@@ -4298,7 +4298,8 @@ function showWin(player,reason){
   // 5목 이펙트 먼저 → 이후 승리창 표시
   const winCells=_lastWinCells||[];
   _lastWinCells=null;
-  showWinCellEffect(winCells,player,()=>{
+  const isStarWin=!!(reason&&reason.includes('별을 모두'));
+  (isStarWin?playStarWinEffect:showWinCellEffect)(winCells,player,()=>{
     document.getElementById('winTitle').textContent=name+' 승리!';
     document.getElementById('winDesc').textContent=reason||'5개를 연속으로 놓아 승리!';
     const reviewBtn=document.getElementById('winReviewBtn');
@@ -4306,6 +4307,44 @@ function showWin(player,reason){
     showWinConfetti(player);
     document.getElementById('winOverlay').classList.add('show');
   });
+}
+// 별 5장 완성 승리 연출: 별 카드 5장이 중앙에 차례로 뜨고, 빛이 훑은 뒤 한 점으로 모이며 번쩍인다.
+// (별은 비밀리에 모으는 카드라 완성되기 전에는 아무것도 보이지 않는다. 승자 화면에서만 재생)
+function playStarWinEffect(cells,player,cb){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const W=Math.min(66,Math.floor((vw-48)/5)-6),H=Math.round(W*1.4),GAP=8;
+  const total=W*5+GAP*4,x0=(vw-total)/2,y0=vh/2-H/2;
+  const els=[];
+  const add=(css,html)=>{const e=document.createElement('div');e.style.cssText='position:fixed;pointer-events:none;'+css;if(html)e.innerHTML=html;document.body.appendChild(e);els.push(e);return e;};
+  const dim=add('inset:0;z-index:780;background:rgba(8,12,26,.62);opacity:0;transition:opacity .5s ease;');
+  requestAnimationFrame(()=>{dim.style.opacity='1';});
+  const cards=[1,2,3,4,5].map((n,i)=>{
+    const col=STAR_COLOR[n];
+    const e=add(`left:${x0+i*(W+GAP)}px;top:${y0}px;width:${W}px;height:${H}px;z-index:782;border-radius:9px;background:#fff;border:2px solid ${col};box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;opacity:0;transform:translateY(18px);transition:opacity .35s ease,transform .35s ease,box-shadow .4s ease;`,
+      `<div style="font-size:${Math.round(W*0.3)}px;color:${col};line-height:1">★</div><div style="font-size:${Math.round(W*0.2)}px;font-weight:700;color:${col};line-height:1">${n}성</div>`);
+    setTimeout(()=>{e.style.opacity='1';e.style.transform='translateY(0)';},450+i*230);
+    return e;
+  });
+  const tGlow=450+5*230+250;           // 5장이 다 뜬 뒤
+  setTimeout(()=>{                      // 빛이 위에서 아래로 훑고, 카드가 금빛으로 밝아진다
+    cards.forEach(e=>{e.style.boxShadow='0 0 0 2px #f2b01e,0 0 22px 4px rgba(242,176,30,.75)';});
+    const sw=add(`left:${x0-14}px;top:${y0-8}px;width:${total+28}px;height:3px;z-index:784;background:linear-gradient(90deg,transparent,#ffe9a8,transparent);box-shadow:0 0 14px #f2b01e;`);
+    try{sw.animate([{transform:'translateY(0)',opacity:0},{opacity:1,offset:.2},{transform:`translateY(${H+16}px)`,opacity:0}],{duration:700,easing:'ease-in-out',fill:'forwards'});}catch(e){}
+  },tGlow);
+  const tConv=tGlow+1000;               // 한 점으로 모인다
+  setTimeout(()=>{
+    cards.forEach((e,i)=>{
+      const dx=(vw/2)-(x0+i*(W+GAP)+W/2),dy=0;
+      e.style.transition='transform .55s cubic-bezier(.6,0,.4,1),opacity .55s ease .1s';
+      e.style.transform=`translate(${dx}px,${dy}px) scale(.3)`;e.style.opacity='0';
+    });
+  },tConv);
+  setTimeout(()=>{                      // 번쩍
+    const fl=add(`left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;z-index:790;background:radial-gradient(circle,#fff 0%,rgba(255,226,150,.9) 40%,rgba(242,176,30,0) 70%);`);
+    try{fl.animate([{transform:'scale(.3)',opacity:1},{transform:`scale(${Math.max(vw,vh)/20})`,opacity:0}],{duration:700,easing:'ease-out',fill:'forwards'});}catch(e){}
+    dim.style.transition='opacity .6s ease';dim.style.opacity='0';
+  },tConv+520);
+  setTimeout(()=>{els.forEach(e=>e.remove());if(cb)cb();},tConv+1050);
 }
 // 5목 착수 직전에 winCells를 저장해두는 변수
 let _lastWinCells=null;
